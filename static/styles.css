@@ -1,0 +1,78 @@
+/*Layout styling*/
+nav .navbar-brand
+{
+    /* size for brand */
+    font-size: x-large;
+}
+
+/* colors for brand */
+nav .navbar-brand .orange
+{
+    color: #ff9331;;
+}
+
+.navbar.bg-dark {
+ background-color:#02B875 !important
+}
+
+main .form-control
+{
+    /* center form controls */
+    display: inline-block;
+
+    /* override Bootstrap's 100% width for form controls */
+    width: auto;
+}
+
+main
+{
+    /* scroll horizontally as needed */
+    overflow-x: auto;
+
+    /* center contents */
+    text-align: center;
+}
+
+main img
+{
+    /* constrain images on small screens */
+    max-width: 100%;
+}
+
+/*Report styling*/
+
+#navReports ul {
+    position: fixed;
+    top: 10%;
+    left: 0;
+
+}
+
+#navReports li {
+    display: block;
+    padding: 25px;
+    background: black;
+    margin: 10px;
+}
+
+#section1 h1 {
+    color: white;
+}
+
+/* Budget styling*/
+.formLabels {
+    font-weight: bold;
+}
+
+.categoryPercent
+{
+    width: 75px;
+}
+
+/*Dashboard*/
+.card-body-dash{
+    padding-top: 0.5rem;
+    padding-right: 0.2rem;
+    padding-bottom: 0.5rem;
+    padding-left: 0.2rem;
+}

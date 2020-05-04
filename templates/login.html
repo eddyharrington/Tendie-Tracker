@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+
+{% block title %}
+Log In
+{% endblock %}
+
+{% block main %}
+<img class="mb-4" src="/static/logo.svg" alt="" width="72" height="72">
+<h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+<form action="/login" method="post">
+    <div class="form-group">
+        <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text">
+    </div>
+    <div class="form-group">
+        <input class="form-control" name="password" placeholder="Password" type="password">
+    </div>
+    <button class="btn btn-primary" type="submit">Log In</button>
+</form>
+{% endblock %}
