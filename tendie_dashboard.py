@@ -17,6 +17,14 @@ def getSpendCategories(userID):
     return categories
 
 
+# Get the users total income
+def getIncome(userID):
+    income = db.execute(
+        "SELECT income FROM users WHERE id = :usersID", usersID=userID)
+
+    return income[0]["income"]
+
+
 # Get and return the users total spend for the current calendar year
 def getTotalSpend_Year(userID):
     totalSpendYear = db.execute(
@@ -50,7 +58,10 @@ def getLastFiveExpenses(userID):
     lastFiveExpenses = db.execute(
         "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY submitTime DESC LIMIT 5", usersID=userID)
 
-    return lastFiveExpenses
+    if lastFiveExpenses:
+        return lastFiveExpenses
+    else:
+        return None
 
 
 # Get and return all budgets for the user

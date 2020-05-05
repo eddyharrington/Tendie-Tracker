@@ -77,21 +77,23 @@ Home
             <h2 style="text-align:left">Your Expenses</h2>
         </div>
     </div>
+    {% if expenses_year and expenses_month and expenses_week %}
     <div class="row">
         <div class="col">
-            <div class="card text-white bg-warning mb-3" style="max-width: 20rem;">
+            <div class="card text-white bg-success mb-3" style="max-width: 20rem;">
                 <div class="card-header"><strong>Remaining Income</strong></div>
                 <div class="card-body">
-                    {% if expenses_year != None %}
-                    <h4 class="card-title">$40,000 <strong style="color:red">TBD</strong></h4>
+                    {% set remainingIncome = (income - expenses_year) %}
+                    {% if remainingIncome < 0 %}
+                    <h4 class="card-title">$0</h4>
                     {% else %}
-                    <p>You have no expenses yet.</p>
+                    <h4 class="card-title">{{ remainingIncome | usd }}</h4>
                     {% endif %}
                 </div>
             </div>
         </div>
         <div class="col">
-            <div class="card text-white bg-success mb-3" style="max-width: 20rem;">
+            <div class="card text-white bg-warning mb-3" style="max-width: 20rem;">
                 <div class="card-header"><strong>2020 Expenses</strong></div>
                 <div class="card-body">
                     {% if expenses_year != None %}
@@ -127,6 +129,9 @@ Home
             </div>
         </div>
     </div>
+    {% else %}
+    <p style="text-align:left"><small class="text-muted">You have no expenses yet.</small></p>
+    {% endif %}
     <!-- End Your Expenses -->
 
     <!-- Begin Last 5 Expenses -->
@@ -160,7 +165,7 @@ Home
                 </table>
             </div>
             {% else %}
-            <p style="text-align:left">You have no expenses yet.</p>
+            <p style="text-align:left"><small class="text-muted">You have no expenses yet.</small></p>
             {% endif %}
         </div>
     </div>
@@ -194,7 +199,7 @@ Home
         {% endfor %}
         {% else %}
         <div class="col">
-            <p style="text-align:left">You have no budgets yet.</p>
+            <p style="text-align:left"><small class="text-muted">You have no expenses yet.</small></p>
         </div>
         {% endif %}
     </div>
