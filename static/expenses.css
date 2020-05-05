@@ -1,0 +1,85 @@
+.selected
+{
+    background-color: #e92929 !important;
+    color: #fff;
+}
+
+td .selected
+{
+    color: #fff;
+}
+
+td input .selected
+{
+    background-color: #d9534f;
+    color: #fff;
+}
+
+td select .selected
+{
+    background-color: #d9534f;
+    color: #fff;
+}
+
+td textarea .selected
+{
+    background-color: #d9534f;
+    color: #fff;
+}
+
+/* Responsive data tables is courtesty of Chris Coyier @ CSS-tricks.com: https://css-tricks.com/responsive-data-tables/ */
+@media screen and (max-width: 768px) {
+
+    /* Force table to not be like tables anymore */
+	table, thead, tbody, th, td, tr {
+		display: block;
+	}
+
+	/* Hide table headers and footers (but not display: none;, for accessibility) */
+	thead tr {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+	tfoot tr {
+		position: absolute;
+		top: -9999px;
+		left: -9999px;
+	}
+
+    tr {
+      margin: 0 0 1rem 0;
+    }
+
+    tr:nth-child(even) {
+      background: #e9ecef;
+    }
+
+	td {
+		/* Behave  like a "row" */
+		border: none;
+		border-bottom: 1px solid #eee;
+		position: relative;
+		padding-left: 50%;
+	}
+
+	td:before {
+		/* Now like a table header */
+
+		/* Top/left values mimic padding */
+		top: 0;
+		left: 6px;
+		padding-right: 10px;
+		white-space: nowrap;
+	}
+
+	/*
+	Label the data
+	*/
+	td:nth-of-type(1):before { content: "#: "; }
+	td:nth-of-type(2):before { content: "Description: "; }
+	td:nth-of-type(3):before { content: "Category: "; }
+	td:nth-of-type(4):before { content: "Date: "; }
+	td:nth-of-type(5):before { content: "Payer: "; }
+	td:nth-of-type(6):before { content: "Amount: "; }
+}
