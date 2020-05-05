@@ -72,7 +72,7 @@ def register():
 
         # Create default spending categories for user
         db.execute("INSERT INTO userCategories (category_id, user_id) VALUES (1, :usersID), (2, :usersID), (3, :usersID), (4, :usersID), (5, :usersID), (6, :usersID), (7, :usersID), (8, :usersID)",
-                   usersID=session["user_id"])
+                   usersID=newUserID)
 
         # Auto-login the user after creating their username
         session["user_id"] = newUserID
@@ -154,6 +154,9 @@ def index():
         # Get todays date (for quick expense modal)
         date = datetime.today().strftime('%Y-%m-%d')
 
+        # Get the users income
+        income = tendie_dashboard.getIncome(session["user_id"])
+
         # Get current years total expenses for the user
         expenses_year = tendie_dashboard.getTotalSpend_Year(session["user_id"])
 
@@ -187,8 +190,8 @@ def index():
         spending_trends = tendie_dashboard.getSpendingTrends(
             session["user_id"])
 
-        return render_template("index.html", expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
-                               budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends, categories=categories, date=date)
+        return render_template("index.html", categories=categories, date=date, income=income, expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
+                               budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends)
 
     # User reached route via POST
     else:
