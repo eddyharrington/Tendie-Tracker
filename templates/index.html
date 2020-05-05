@@ -42,7 +42,7 @@ Home
                     </div>
                     <div class="form-group">
                         <label for="date" class="col-form-label">Date:</label>
-                        <input type="date" class="form-control" name="date" id="date" value="" form="quickExpense"
+                        <input type="date" class="form-control" name="date" id="date" value="{{ date }}" form="quickExpense"
                             required>
                     </div>
                     <div class="form-group">
@@ -279,10 +279,17 @@ Home
 $('#quickExpenseModal').on('hidden.bs.modal', function () {
     $('#description').val('')
     $('#category').val('')
-    $('#date').val('')
+    $('#date').val('{{ date }}')
     $('#payer').val('')
     $('#amount').val('')
 })
+
+// Data Tables
+$(document).ready(function() {
+    $('#expenses').DataTable( {
+        "pagingType": "full_numbers"
+    } );
+} );
 
 {% if budgets %}
 // Begin Budget Charts
@@ -489,13 +496,6 @@ var test = new Chart(ctx, {
     }
 });
 // End Spending Frequency Chart
-
-// Data Tables
-$(document).ready(function() {
-    $('#expenses').DataTable( {
-        "pagingType": "full_numbers"
-    } );
-} );
 
 </script>
 
