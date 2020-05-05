@@ -1,0 +1,244 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+    <link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" type="text/css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" type="text/css" rel="stylesheet">
+    <link href="/static/expenses.css" type="text/css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.print.min.js "></script>
+{% endblock %}
+
+{% block title %}
+    Expense History
+{% endblock %}
+
+{% block main %}
+    <h1>Expense History</h1>
+    <br>
+    {% if isDeleteAlert == True %}
+      <div class="alert alert-dismissible alert-danger">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>POOF!</strong> You deleted an expense.
+      </div>
+    {% endif %}
+
+    {% if history %}
+    <!--Table functionality courtesty of DataTables.net-->
+    <table id="expenses" class="display" style="width:100%">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Payer</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for result in history %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td><a href="#" data-toggle="modal" data-target="#updateModal" data-description="{{ result['description'] }}" data-category="{{ result['category'] }}" data-date="{{ result['date'] }}" data-payer="{{ result['payer'] }}" data-amount="{{ result['amount'] }}" data-submittime="{{ result['submitTime'] }}">{{ result["description"] }}</a></td>
+              <td>{{ result["category"] }}</td>
+              <td>{{ result["date"] }}</td>
+              <td>{{ result["payer"] }}</td>
+              <td>{{ result["amount"] | usd}}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>#</th>
+                <th>Description</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Payer</th>
+                <th>Amount</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <!-- Expense update modal -->
+    <div class="modal fade" id="updateModal" tabindex="-1" role="dialog" aria-labelledby="updateModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="updateModalLabel">Update Expense</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form action="/history" id="updateExpense" method="post">
+              <div class="form-group">
+                <input type="text" class="form-control" name="oldDescription" id="oldDescription" value="" form="updateExpense" readonly required hidden>
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-control" name="oldCategory" id="oldCategory" value="" form="updateExpense" readonly required hidden>
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-control" name="oldDate" id="oldDate" value="" form="updateExpense" readonly required hidden>
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-control" name="oldPayer" id="oldPayer" value="" form="updateExpense" readonly required hidden>
+              </div>
+              <div class="form-group">
+                <input type="text" class="form-control" name="oldAmount" id="oldAmount" value="" form="updateExpense" readonly required hidden>
+                <input type="hidden" name="submitTime" id="submitTime" value="" form="updateExpense" readonly required>
+              </div>
+              <div id="deleteDetails" style="display:none">
+                <p class="text-danger"><strong>Are you sure you want to delete this expense?</strong></p>
+                <ul class="text-danger" style="text-align:left">
+                  <li class="text-danger small">Your dashboard, reports, and expense history will automatically reflect the change</li>
+                </ul>
+                <br>
+                <div class="row">
+                  <div class="col"><button type="submit" class="btn btn-danger btn-block" name="btnDeleteConfirm" id="btnDeleteConfirm" form="updateExpense">Yes</button></div>
+                  <div class="col"><button type="button" class="btn btn-warning btn-block" id="btnDeleteCancel">No</button></div>
+                </div>
+              </div>
+              <div id="newExpenseDetails">
+                <div class="form-group">
+                  <label for="description" class="col-form-label">Description:</label>
+                  <input type="text" class="form-control" name="description" id="description" value="" form="updateExpense" maxlength="200" required>
+                </div>
+                <div class="form-group">
+                  <label for="category" class="col-form-label">Category:</label>
+                  <select id="category" class="form-control-sm" name="category" id="category" form="updateExpense" required>
+                    {% for category in categories %}
+                      <option value="{{ category['name'] }}">{{ category['name'] }}</option>
+                    {% endfor %}
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="date" class="col-form-label">Date:</label>
+                  <input type="date" class="form-control" name="date" id="date" value="" form="updateExpense" required>
+                </div>
+                <div class="form-group">
+                  <label for="payer" class="col-form-label">Payer:</label>
+                  <input type="text" class="form-control-sm" name="payer" id="payer" value="" maxlength="35" size="10" placeholder="Self" form="updateExpense" required>
+                </div>
+                <div class="form-group">
+                  <label for="amount" class="col-form-label">Amount:</label>
+                  <input type="text" class="form-control-sm" name="amount" id="amount" value="" size="10" placeholder="$" required maxlength="10" pattern="(?=.*?\d)^(([1-9]\d{0,2}(\d{3})*)|\d+)?(\.\d{1,2})?$" title="Format must be currency value without dollar sign or commas e.g. 1, 2.50, 1500.75" form="updateExpense" required>
+                </div>
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-danger mr-auto" id="btnDelete">Delete Expense</button>
+            <button type="submit" class="btn btn-success" name="btnSave" id="btnSave" form="updateExpense">Save Changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    
+        //Data Table
+        $(document).ready(function() {
+            $('#expenses').DataTable( {
+                "pagingType": "full_numbers",
+                "order": [[ 0, "desc" ]],
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel'
+                ]
+            } );
+        } );
+
+        // Delete expense UX functionality
+        var expenseDetailsBody;
+        var saveButton = $('#btnSave');
+        var deleteButton = $('#btnDelete');
+        var isDeleteUX = false;
+        $(document).ready(function(){
+          $("#btnDelete, #btnDeleteCancel").click(function(){
+            toggleDeleteUX();
+            if (isDeleteUX == false) {
+              isDeleteUX = true;
+            }
+            else {
+              isDeleteUX = false;
+            }
+          });
+        });
+
+        function toggleDeleteUX(){
+            // Show the expense detail body if it's been hidden/detached already and hide delete message/buttons
+            if ( expenseDetailsBody ) {
+              expenseDetailsBody.appendTo( ".modal-body" );
+              expenseDetailsBody = null;
+              // Hide the delete message and show the Save button
+              $("#deleteDetails").hide();
+              saveButton.show();
+              deleteButton.show();
+
+            // Otherwise hide/detach the expense detail body and show the delete message/buttons
+            } else {
+              expenseDetailsBody = $( "#newExpenseDetails" ).detach();
+              saveButton.hide();
+              deleteButton.hide();
+              $("#deleteDetails").show();
+            }
+        }
+
+        // While the modal is showing (CSS transitions aren't 100% finished yet), set the title of the modal and the expense fields
+        $('#updateModal').on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget) // Button that triggered the modal
+            var description = button.data('description') // Extract info from data-* attributes
+            var category = button.data('category') // Extract info from data-* attributes
+            var date = button.data('date') // Extract info from data-* attributes
+            var payer = button.data('payer') // Extract info from data-* attributes
+            var amount = button.data('amount') // Extract info from data-* attributes
+            var submitTime = button.data('submittime')
+            var modal = $(this)
+            modal.find('.modal-title').text("Update Expense Record")
+            // Fields for current expense values
+            modal.find('#oldDescription').val(description)
+            modal.find('#oldCategory').val(category)
+            modal.find('#oldDate').val(date)
+            modal.find('#oldPayer').val(payer)
+            modal.find('#oldAmount').val(amount)
+            modal.find('#submitTime').val(submitTime)
+            // Fields for updating the expense
+            modal.find('#description').val(description)
+            modal.find('#category').val(category)
+            modal.find('#date').val(date)
+            modal.find('#payer').val(payer)
+            modal.find('#amount').val(amount)
+        })
+
+        // As the modal becomes hidden (CSS transitions are 100% finished), clear the fields from the modal
+        $('#updateModal').on('hidden.bs.modal', function () {
+            $('#description').val('')
+            $('#category').val('')
+            $('#date').val('')
+            $('#payer').val('')
+            $('#amount').val('')
+
+            // Make sure the UX toggles back to the default 'update expense' mode (instead of delete)
+            if (isDeleteUX == true){
+              toggleDeleteUX();
+              isDeleteUX = false;
+            }
+        })
+
+    </script>
+
+    {% else %}
+    You don't have any expenses yet 😥
+    {% endif %}
+{% endblock %}
