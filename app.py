@@ -50,7 +50,7 @@ def register():
 
     if request.method == "POST":
         # Query DB for all existing user names and make sure new username isn't already taken
-        username = request.form.get("username")
+        username = request.form.get("username").strip()
         existingUsers = db.execute(
             "SELECT username FROM users WHERE LOWER(username) = :username", username=username.lower())
         if existingUsers:
@@ -206,6 +206,7 @@ def index():
 @login_required
 def expenses():
     """Manage expenses"""
+
     return render_template("expenses.html")
 
 
@@ -213,6 +214,7 @@ def expenses():
 @login_required
 def addexpenses():
     """Add new expense(s)"""
+
     # User reached route via POST
     if request.method == "POST":
         # Get all of the expenses provided from the HTML form
@@ -232,6 +234,70 @@ def addexpenses():
         return render_template("addexpenses.html", categories=categories, date=date)
 
 
+@app.route("/history", methods=["GET", "POST"])
+@login_required
+def history():
+    """Show history of expenses or let the user update existing expense"""
+
+    # User reached route via GET
+    if request.method == "GET":
+        # Get all of the users expense history ordered by submission time
+        history = tendie_expenses.getHistory(session["user_id"])
+
+        # Get the users spend categories
+        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+
+        return render_template("history.html", history=history, categories=categories, isDeleteAlert=False)
+
+    # User reached route via POST
+    else:
+        # Initialize users action
+        userHasSelected_deleteExpense = False
+
+        # Determine what action was selected by the user (button/form trick from: https://stackoverflow.com/questions/26217779/how-to-get-the-name-of-a-submitted-form-in-flask)
+        if "btnDeleteConfirm" in request.form:
+            userHasSelected_deleteExpense = True
+        elif "btnSave" in request.form:
+            userHasSelected_deleteExpense = False
+        else:
+            return apology("Doh! Spend Categories is drunk. Try again!")
+
+        # Get the existing expense record ID from the DB and build a data structure to store old expense details
+        oldExpense = tendie_expenses.getExpense(
+            request.form, session["user_id"])
+
+        # Make sure an existing record was found otherwise render an error message
+        if oldExpense["id"] == None:
+            return apology("The expense record you're trying to update doesn't exist")
+
+        # Delete the existing expense record
+        if userHasSelected_deleteExpense == True:
+
+            # Delete the old record from the DB
+            deleted = tendie_expenses.deleteExpense(
+                oldExpense, session["user_id"])
+            if not deleted:
+                return apology("The expense was unable to be deleted.")
+
+            # Get the users expense history, spend categories, and then render the history page w/ delete alert
+            history = tendie_expenses.getHistory(session["user_id"])
+            categories = tendie_dashboard.getSpendCategories(
+                session["user_id"])
+            return render_template("history.html", history=history, categories=categories, isDeleteAlert=True)
+
+        # Update the existing expense record
+        else:
+            # Update the old record with new details from the form
+            expensed = tendie_expenses.updateExpense(
+                oldExpense, request.form, session["user_id"])
+            if not expensed:
+                return apology("The expense was unable to be updated.")
+
+            # Redirect to results page and render a summary of the updated expense
+            return render_template("expensed.html", results=expensed)
+
+
+# Handle errors by rendering apology
 def errorhandler(e):
     """Handle error"""
     if not isinstance(e, HTTPException):
