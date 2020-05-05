@@ -16,7 +16,7 @@ def addExpenses(formData, userID):
     expense = {"description": None, "category": None,
                "date": None, "amount": None, "payer": None}
 
-    # Check if the user is submitting via 'addexpenses' or 'index' route - this determines if they're adding 1 or potentially many expenses in a single POST
+    # Check if the user is submitting via 'addexpenses' or 'index' route - this determines if a user is adding 1 or potentially many expenses in a single POST
     if "." not in formData[0][0]:
         for key, value in formData:
             # Add to dictionary
