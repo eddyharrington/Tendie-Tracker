@@ -1,0 +1,502 @@
+{% extends "layout.html" %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+{% endblock %}
+
+{% block title %}
+Home
+{% endblock %}
+
+{% block main %}
+<h1>Dashboard</h1>
+
+<!-- Begin Quick Expense -->
+<button type="button" class="btn btn-outline-primary btn-block btn-lg" data-toggle="modal"
+    data-target="#quickExpenseModal">💰 Quick Expense 💰</button>
+
+<div class="modal fade" id="quickExpenseModal" tabindex="-1" role="dialog" aria-labelledby="quickExpenseModalLabel"
+    aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickExpenseModalLabel">Add Expense</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form action="/" id="quickExpense" method="post">
+                    <div class="form-group">
+                        <label for="description" class="col-form-label">Description:</label>
+                        <input type="text" class="form-control" name="description" id="description" value=""
+                            form="quickExpense" maxlength="200" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="category" class="col-form-label">Category:</label>
+                        <select id="category" class="form-control-sm" name="category" form="quickExpense" required>
+                            {% for category in categories %}
+                            <option value="{{ category['name'] }}">{{ category['name'] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="date" class="col-form-label">Date:</label>
+                        <input type="date" class="form-control" name="date" id="date" value="" form="quickExpense"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="payer" class="col-form-label">Payer:</label>
+                        <input type="text" class="form-control-sm" name="payer" id="payer" value="" maxlength="35"
+                            size="10" placeholder="Self" form="quickExpense" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount" class="col-form-label">Amount:</label>
+                        <input type="text" class="form-control-sm" name="amount" id="amount" value="" size="10"
+                            placeholder="$" required maxlength="10"
+                            pattern="(?=.*?\d)^(([1-9]\d{0,2}(\d{3})*)|\d+)?(\.\d{1,2})?$"
+                            title="Format must be currency value without dollar sign or commas e.g. 1, 2.50, 1500.75"
+                            form="quickExpense" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-success" form="quickExpense">Save Expense</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- End Quick Expense -->
+
+<br>
+<div class="container">
+    <!-- Begin Your Expenses -->
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Your Expenses</h2>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col">
+            <div class="card text-white bg-warning mb-3" style="max-width: 20rem;">
+                <div class="card-header"><strong>Remaining Income</strong></div>
+                <div class="card-body">
+                    {% if expenses_year != None %}
+                    <h4 class="card-title">$40,000 <strong style="color:red">TBD</strong></h4>
+                    {% else %}
+                    <p>You have no expenses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-white bg-success mb-3" style="max-width: 20rem;">
+                <div class="card-header"><strong>2020 Expenses</strong></div>
+                <div class="card-body">
+                    {% if expenses_year != None %}
+                    <h4 class="card-title">{{ expenses_year | usd }}</h4>
+                    {% else %}
+                    <p>You have no expenses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-white bg-primary mb-3" style="max-width: 20rem;">
+                <div class="card-header"><strong>Monthly Expenses</strong></div>
+                <div class="card-body">
+                    {% if expenses_month != None %}
+                    <h4 class="card-title">{{ expenses_month | usd }}</h4>
+                    {% else %}
+                    <p>You have no expenses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="card text-white bg-info mb-3" style="max-width: 20rem;">
+                <div class="card-header"><strong>Weekly Expenses</strong></div>
+                <div class="card-body">
+                    {% if expenses_week != None %}
+                    <h4 class="card-title">{{ expenses_week | usd }}</h4>
+                    {% else %}
+                    <p>You have no expenses yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- End Your Expenses -->
+
+    <!-- Begin Last 5 Expenses -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h4 style="text-align:left">Last 5 Expenses</h4>
+            {% if expenses_last5 != None %}
+            <div class="table-responsive">
+                <table class="table table-hover table-striped table-sm">
+                    <thead>
+                        <tr>
+                            <th scope="col">Description</th>
+                            <th scope="col">Category</th>
+                            <th scope="col">Date</th>
+                            <th scope="col">Payer</th>
+                            <th scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for expense in expenses_last5 %}
+                        <tr>
+                            <td>{{ expense['description'] }}</td>
+                            <td>{{ expense['category'] }}</td>
+                            <td>{{ expense['expenseDate'] }}</td>
+                            <td>{{ expense['payer'] }}</td>
+                            <td>{{ expense['amount'] | usd }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p style="text-align:left">You have no expenses yet.</p>
+            {% endif %}
+        </div>
+    </div>
+    <!-- End Last 5 Expenses -->
+
+    <!-- Begin Your Budgets -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Your Budgets</h2>
+        </div>
+    </div>
+    <div class="row">
+        {% if budgets %}
+        {% for budget in budgets %}
+        <div class="col">
+            <div class="card bg-light mb-3" style="max-width: 14rem;">
+                <div class="card-header"><strong><a
+                            href="/updatebudget/{{ budget['name'] }}">{{ budget["name"] }}</a></strong></div>
+                <div class="card-body-dash">
+                    {% set percent = ((budget["spent"] / budget["amount"]) * 100) %}
+                    {% set totalBudgetAmount = (budget["amount"] | usd) %}
+                    {% set totalBudgetAmount = totalBudgetAmount[:-3] %}
+                    <p>You've spent {{ percent | round | int }}% of your {{ totalBudgetAmount }} budget</p>
+                    <div class="chart-container" style="position: relative; height:17vh">
+                        <canvas id="budgetChart.{{ loop.index }}"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="col">
+            <p style="text-align:left">You have no budgets yet.</p>
+        </div>
+        {% endif %}
+    </div>
+    <!-- End Your Budgets -->
+
+    <!-- Begin Weekly Spending Chart -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Weekly Spending</h2>
+        </div>
+    </div>
+    <div class="row">
+        {% if spending_week %}
+        <div class="col">
+            <div class="chart-container" style="position: relative; height:30vh">
+                <canvas id="weeklyChart"></canvas>
+            </div>
+        </div>
+        {% else %}
+        <div class="col">
+            <p style="text-align:left"><small class="text-muted">Chart will not display until you record at least 1
+                    expense.</small></p>
+        </div>
+        {% endif %}
+    </div>
+    <!-- End Weekly Spending Chart -->
+
+    <!-- Begin Monthly Spending Chart -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Monthly Spending</h2>
+        </div>
+    </div>
+    <div class="row">
+        {% if spending_month %}
+        <div class="col">
+            <div class="chart-container" style="position: relative; height:30vh">
+                <canvas id="monthlyChart"></canvas>
+            </div>
+        </div>
+        {% else %}
+        <div class="col">
+            <p style="text-align:left"><small class="text-muted">Chart will not display until you record at least 1
+                    expense.</small></p>
+        </div>
+        {% endif %}
+    </div>
+    <!-- End Monthly Spending Chart -->
+
+    <!-- Begin Spending Habits Chart -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Spending Habits</h2>
+        </div>
+    </div>
+    <div class="row">
+        {% if spending_trends %}
+        <div class="col-12">
+            <div class="chart-container" style="position: relative; height:50vh">
+                <canvas id="spendingChart"></canvas>
+            </div>
+            <p><small class="text-muted">Chart note: does not include categories that represent less than 1% of overall
+                    spending</small></p>
+        </div>
+        {% else %}
+        <div class="col">
+            <p style="text-align:left"><small class="text-muted">Chart will not display until you record at least 1
+                    expense.</small></p>
+        </div>
+        {% endif %}
+    </div>
+    <!-- End Spending Habits Chart -->
+</div>
+
+
+<script>
+
+// As the modal becomes hidden (CSS transitions are 100% finished), clear the fields from the modal
+$('#quickExpenseModal').on('hidden.bs.modal', function () {
+    $('#description').val('')
+    $('#category').val('')
+    $('#date').val('')
+    $('#payer').val('')
+    $('#amount').val('')
+})
+
+{% if budgets %}
+// Begin Budget Charts
+{% for budget in budgets %}
+var ctx_{{ loop.index }} = document.getElementById('budgetChart.{{ loop.index }}').getContext('2d');
+var budgetChart_{{ loop.index }} = new Chart(ctx_{{ loop.index }}, {
+    type: 'doughnut',
+    data: {
+        labels: ['Spent', 'Remaining'],
+        datasets: [{
+            label: '{{ budget["name"] }}',
+            data: [{{ budget["spent"] }}, {{ budget["remaining"] }}],
+            backgroundColor: [
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)'
+            ],
+            borderColor: [
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        legend: {
+            labels: {
+                fontColor: 'black'
+            }
+        }
+    }
+});
+{% endfor %}
+// End Budget Charts
+{% endif %}
+
+
+{% if spending_week %}
+// Begin Weekly Chart
+var ctx = document.getElementById('weeklyChart').getContext('2d');
+var weeklyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: [ '{{ spending_week[0]["startOfWeek"][5:] }} - {{ spending_week[0]["endOfWeek"][5:] }}', '{{ spending_week[1]["startOfWeek"][5:] }} - {{ spending_week[1]["endOfWeek"][5:] }}', '{{ spending_week[2]["startOfWeek"][5:] }} - {{ spending_week[2]["endOfWeek"][5:] }}', '{{ spending_week[3]["startOfWeek"][5:] }} - {{ spending_week[3]["endOfWeek"][5:] }}'],
+        datasets: [{
+            label: 'Total $ Spent',
+            data: [{{ spending_week[0]["amount"] }}, {{ spending_week[1]["amount"] }}, {{ spending_week[2]["amount"] }}, {{ spending_week[3]["amount"] }}],
+            pointRadius: 9,
+            fill: false,
+            lineTension: 0.1,
+            borderWidth: 2,
+            backgroundColor: "rgba(240, 173, 78, 1)",
+            borderColor: "rgba(2, 184, 117, 1)"
+        }]
+    },
+    options: {
+        legend: { display: false },
+        title: {
+            display: true,
+            text: 'Total spending per week of the last 4 weeks'
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+});
+// End Weekly Chart
+{% endif %}
+
+
+{% if spending_month %}
+// Begin Monthly Chart
+var ctx = document.getElementById('monthlyChart').getContext('2d');
+var monthlyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [
+            {% for record in spending_month %}
+            {% if loop.index != (spending_month | length) %}
+            '{{ record["name"] }}',
+            {% else %}
+            '{{ record["name"] }}'
+            {% endif %}
+            {% endfor %}
+            ],
+        datasets: [{
+            label: 'Total $ Spent',
+            data: [
+                {% for record in spending_month %}
+                {% if loop.index != (spending_month | length) %}
+                '{{ record["amount"] }}',
+                {% else %}
+                '{{ record["amount"] }}'
+                {% endif %}
+                {% endfor %}
+                ],
+            backgroundColor: [
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)',
+                'rgba(240, 173, 78, 1)',
+                'rgba(2, 184, 117, 1)'
+            ],
+            borderColor: [
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)',
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)',
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)',
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)',
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)',
+                'rgba(192, 138, 62, 1)',
+                'rgba(1, 147, 93, 1)'
+            ],
+            borderWidth: 2
+        }]
+    },
+    options: {
+        legend: { display: false },
+        title: {
+            display: true,
+            text: 'Total spending per month during the current the year'
+        },
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            yAxes: [{
+                ticks: {
+                    beginAtZero: true
+                }
+            }]
+        }
+    }
+});
+// End Monthly Chart
+{% endif %}
+
+// Begin Spending Trends Chart
+var ctx = document.getElementById('spendingChart').getContext('2d');
+var test = new Chart(ctx, {
+    type: 'bubble',
+    data: {
+        labels: "Spend Categories",
+        datasets: [
+        {% for record in spending_trends %}
+        {
+            label: ["{{ record['name'] }}"],
+            backgroundColor: "rgba(240, 173, 78, 0.7)",
+            borderColor: "rgba(2, 184, 117, 1)",
+            borderWidth: 2,
+            data: [{
+                x: {{record['totalSpent']}},
+                y: {{record['totalCount']}},
+                r: {{record['proportionalAmount']}}
+            }]
+        {% if loop.index != (spending_trends | length) %}
+        },
+        {% else %}
+        }
+        {% endif %}
+        {% endfor %}
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        title: {
+        display: true,
+        text: 'Total spent, total # of expenses, and % of overall spent per spend category'
+        },
+        scales: {
+        yAxes: [{
+            scaleLabel: {
+            display: true,
+            labelString: "Total # of Expenses"
+            }
+        }],
+        xAxes: [{
+            scaleLabel: {
+            display: true,
+            labelString: "Total $ Spent"
+            }
+        }]
+        }
+    }
+});
+// End Spending Frequency Chart
+
+// Data Tables
+$(document).ready(function() {
+    $('#expenses').DataTable( {
+        "pagingType": "full_numbers"
+    } );
+} );
+
+</script>
+
+{% endblock %}
