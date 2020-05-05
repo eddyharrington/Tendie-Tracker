@@ -12,6 +12,7 @@ from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
+from datetime import datetime
 
 from helpers import apology, login_required, usd
 
@@ -150,6 +151,9 @@ def index():
         # Get the users spend categories (for quick expense modal)
         categories = tendie_dashboard.getSpendCategories(session["user_id"])
 
+        # Get todays date (for quick expense modal)
+        date = datetime.today().strftime('%Y-%m-%d')
+
         # Get current years total expenses for the user
         expenses_year = tendie_dashboard.getTotalSpend_Year(session["user_id"])
 
@@ -183,7 +187,8 @@ def index():
         spending_trends = tendie_dashboard.getSpendingTrends(
             session["user_id"])
 
-        return render_template("index.html", expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5, budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends, categories=categories)
+        return render_template("index.html", expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
+                               budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends, categories=categories, date=date)
 
     # User reached route via POST
     else:
@@ -195,6 +200,36 @@ def index():
 
         # Redirect to results page and render a summary of the submitted expenses
         return render_template("expensed.html", results=expenses)
+
+
+@app.route("/expenses", methods=["GET"])
+@login_required
+def expenses():
+    """Manage expenses"""
+    return render_template("expenses.html")
+
+
+@app.route("/addexpenses", methods=["GET", "POST"])
+@login_required
+def addexpenses():
+    """Add new expense(s)"""
+    # User reached route via POST
+    if request.method == "POST":
+        # Get all of the expenses provided from the HTML form
+        formData = list(request.form.items())
+
+        # Add expenses to the DB for user
+        expenses = tendie_expenses.addExpenses(formData, session["user_id"])
+
+        # Redirect to results page and render a summary of the submitted expenses
+        return render_template("expensed.html", results=expenses)
+    else:
+        # Get the users spend categories
+        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+
+        # Render expense page
+        date = datetime.today().strftime('%Y-%m-%d')
+        return render_template("addexpenses.html", categories=categories, date=date)
 
 
 def errorhandler(e):
