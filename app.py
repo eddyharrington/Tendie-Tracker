@@ -5,6 +5,7 @@ import copy
 import config
 import tendie_dashboard
 import tendie_expenses
+import tendie_budgets
 
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -48,6 +49,7 @@ db = SQL("sqlite:///budget.db")
 def register():
     """Register user"""
 
+    # User reached route via POST
     if request.method == "POST":
         # Query DB for all existing user names and make sure new username isn't already taken
         username = request.form.get("username").strip()
@@ -80,7 +82,7 @@ def register():
         # Redirect user to home page
         return redirect("/")
 
-    # User reached route via GET (as by clicking a link or via redirect)
+    # User reached route via GET
     else:
         return render_template("register.html")
 
@@ -92,7 +94,7 @@ def login():
     # Forget any user_id
     session.clear()
 
-    # User reached route via POST (as by submitting a form via POST)
+    # User reached route via POST
     if request.method == "POST":
 
         # Ensure username was submitted
@@ -117,7 +119,7 @@ def login():
         # Redirect user to home page
         return redirect("/")
 
-    # User reached route via GET (as by clicking a link or via redirect)
+    # User reached route via GET
     else:
         return render_template("login.html")
 
@@ -228,6 +230,8 @@ def addexpenses():
 
         # Redirect to results page and render a summary of the submitted expenses
         return render_template("expensed.html", results=expenses)
+
+    # User reached route via GET
     else:
         # Get the users spend categories
         categories = tendie_dashboard.getSpendCategories(session["user_id"])
@@ -298,6 +302,138 @@ def history():
 
             # Redirect to results page and render a summary of the updated expense
             return render_template("expensed.html", results=expensed)
+
+
+@app.route("/budgets", methods=["GET", "POST"])
+@login_required
+def budgets():
+    """Manage budgets"""
+
+    # User reached route via GET
+    if request.method == "GET":
+        # Get the users income
+        income = tendie_dashboard.getIncome(session["user_id"])
+
+        # Get the users current budgets
+        budgets = tendie_budgets.getBudgets(session["user_id"])
+
+        # Get the users total budgeted amount
+        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+
+        return render_template("budgets.html", income=income, budgets=budgets, budgeted=budgeted, deletedBudgetName=None)
+
+    # User reached route via POST
+    else:
+        # Get the name of the budget the user wants to delete
+        budgetName = request.form.get("delete").strip()
+
+        # Delete the budget
+        deletedBudgetName = tendie_budgets.deleteBudget(
+            budgetName, session["user_id"])
+
+        # Render the budgets page with a success message, otherwise throw an error/apology
+        if deletedBudgetName:
+            # Get the users income, current budgets, and sum their budgeted amount unless they don't have any budgets (same steps as a GET for this route)
+            income = tendie_dashboard.getIncome(session["user_id"])
+            budgets = tendie_budgets.getBudgets(session["user_id"])
+            budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+
+            return render_template("budgets.html", income=income, budgets=budgets, budgeted=budgeted, deletedBudgetName=deletedBudgetName)
+        else:
+            return apology("Uh oh! Your budget could not be deleted.")
+
+
+@app.route("/createbudget", methods=["GET", "POST"])
+@login_required
+def createbudget():
+    """Create a budget"""
+
+    # User reached route via POST
+    if request.method == "POST":
+        # Get all of the budget info provided from the HTML form
+        formData = list(request.form.items())
+
+        # Generate data structure to hold budget info from form
+        budgetDict = tendie_budgets.generateBudgetFromForm(formData)
+        # Render error message if budget name or categories contained invalid data
+        if "apology" in budgetDict:
+            return apology(budget["apology"])
+        else:
+            # Add budget to DB for user
+            budget = tendie_budgets.createBudget(
+                budgetDict, session["user_id"])
+            # Render error message if budget name is a duplicate of another budget the user has
+            if "apology" in budget:
+                return apology(budget["apology"])
+            else:
+                return render_template("budgetcreated.html", results=budget)
+    else:
+        # TODO need to make sure user has at least 1 spend category otherwise no selects will appear for
+        # budgeting (need to design something here that works for every page e.g. addexpense). Initial idea is to not allow user to delete ALL categories, must have at least 1.
+
+        # Get the users income
+        income = tendie_dashboard.getIncome(session["user_id"])
+
+        # Get the users current budgets
+        budgets = tendie_budgets.getBudgets(session["user_id"])
+
+        # Get the users total budgeted amount
+        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+
+        # Get the users spend categories
+        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+
+        return render_template("createbudget.html", income=income, budgeted=budgeted, categories=categories)
+
+
+@app.route("/updatebudget/<urlvar_budgetname>", methods=["GET", "POST"])
+@login_required
+def updatebudget(urlvar_budgetname):
+    """Update a budget"""
+
+    # User reached route via POST
+    if request.method == "POST":
+        # Get all of the budget info provided from the HTML form
+        formData = list(request.form.items())
+
+        # Generate data structure to hold budget info from form
+        budgetDict = tendie_budgets.generateBudgetFromForm(formData)
+
+        # Render error message if budget name or categories contained invalid data
+        if "apology" in budgetDict:
+            return apology(budget["apology"])
+        else:
+            # Update budget in the DB for user
+            budget = tendie_budgets.updateBudget(
+                urlvar_budgetname, budgetDict, session["user_id"])
+
+            # Render error message if budget name is a duplicate of another budget the user has
+            if "apology" in budget:
+                return apology(budget["apology"])
+            else:
+                return render_template("budgetcreated.html", results=budget)
+
+    # User reached route via GET
+    else:
+        # Get the budget details from the DB based on the budget name provided via URL. Throw an apology/error if budget can't be found.
+        budgetID = tendie_budgets.getBudgetID(
+            urlvar_budgetname, session["user_id"])
+        if budgetID is None:
+            return apology("'" + urlvar_budgetname + "' budget does not exist.")
+        else:
+            budget = tendie_budgets.getBudgetByID(budgetID, session["user_id"])
+
+        # Get the users income
+        income = tendie_dashboard.getIncome(session["user_id"])
+
+        # Get the users total budgeted amount
+        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+
+        # Generate the full, updatable budget data structure (name, amount for budget w/ all categories and their budgeted amounts)
+        budget = tendie_budgets.getUpdatableBudget(budget, session["user_id"])
+
+        # Render the budget update page
+        return render_template("updatebudget.html", income=income, budgeted=budgeted, budget=budget)
 
 
 # Handle errors by rendering apology

@@ -77,7 +77,7 @@ Home
             <h2 style="text-align:left">Your Expenses</h2>
         </div>
     </div>
-    {% if expenses_year and expenses_month and expenses_week %}
+    {% if expenses_year %}
     <div class="row">
         <div class="col">
             <div class="card text-white bg-success mb-3" style="max-width: 20rem;">
@@ -199,7 +199,7 @@ Home
         {% endfor %}
         {% else %}
         <div class="col">
-            <p style="text-align:left"><small class="text-muted">You have no expenses yet.</small></p>
+            <p style="text-align:left"><small class="text-muted">You have no budgets yet.</small></p>
         </div>
         {% endif %}
     </div>

@@ -1,4 +1,5 @@
 import calendar
+import tendie_budgets
 
 from cs50 import SQL
 from flask import request, session
@@ -70,32 +71,37 @@ def getBudgets(userID):
     budget = {"id": None, "name": None,
               "amount": 0, "spent": 0, "remaining": 0}
 
-    budgets_query = db.execute(
-        "SELECT * FROM budgets WHERE user_id = :usersID ORDER BY amount DESC", usersID=userID)
-    for record in budgets_query:
-        budget["id"] = record["id"]
-        budget["name"] = record["name"]
-        budget["amount"] = record["amount"]
+    budgets_query = tendie_budgets.getBudgets(userID)
+    # Build a budget dict to return
+    if budgets_query:
+        for record in budgets_query:
+            budget["id"] = record["id"]
+            budget["name"] = record["name"]
+            budget["amount"] = record["amount"]
 
-        # Query the DB for the budgets total spent amount (calculated as the sum of expenses with categories that match the categories selected for the individual budget)
-        budget_TotalSpent = db.execute(
-            "SELECT SUM(amount) AS 'spent' FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-            usersID=userID, budgetID=budget["id"])
-        if (budget_TotalSpent[0]["spent"] == None):
-            budget["spent"] = 0
-        else:
-            budget["spent"] = budget_TotalSpent[0]["spent"]
+            # Query the DB for the budgets total spent amount (calculated as the sum of expenses with categories that match the categories selected for the individual budget)
+            budget_TotalSpent = db.execute(
+                "SELECT SUM(amount) AS 'spent' FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
+                usersID=userID, budgetID=budget["id"])
+            if (budget_TotalSpent[0]["spent"] == None):
+                budget["spent"] = 0
+            else:
+                budget["spent"] = budget_TotalSpent[0]["spent"]
 
-        # Set the remaining amount to 0 if the user has spent more than they budgeted for so that the charts don't look crazy
-        if (budget["spent"] > budget["amount"]):
-            budget["remaining"] = 0
-        else:
-            budget["remaining"] = budget["amount"] - budget["spent"]
+            # Set the remaining amount to 0 if the user has spent more than they budgeted for so that the charts don't look crazy
+            if (budget["spent"] > budget["amount"]):
+                budget["remaining"] = 0
+            else:
+                budget["remaining"] = budget["amount"] - budget["spent"]
 
-        # Add the budget to the list
-        budgets.append(budget.copy())
+            # Add the budget to the list
+            budgets.append(budget.copy())
 
-    return budgets
+        return budgets
+
+    # Return None if no budget was found
+    else:
+        return None
 
 
 # Gets the last four weeks start dates and end dates (e.g. '2020-04-13' and '2020-04-19')
