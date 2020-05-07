@@ -99,8 +99,6 @@ def createBudget(budget, userID):
     if not uniqueBudgetName:
         return {"apology": "Please enter a unique budget name, not a duplicate."}
 
-    # TODO - verifyCategoryExists before proceeding with updating. Defense programming here to make sure the categories actually exist.
-
     # Insert new budget into DB
     newBudgetID = db.execute("INSERT INTO budgets (name, amount, user_id) VALUES (:budgetName, :budgetAmount, :usersID)",
                              budgetName=budget["name"], budgetAmount=budget["amount"], usersID=userID)
@@ -109,43 +107,44 @@ def createBudget(budget, userID):
     categoryIDS = getBudgetCategoryIDS(budget["categories"], userID)
 
     # Insert a record for each category in the new budget
-    for categoryID in categoryIDS:
-        db.execute("INSERT INTO budgetCategories (budgets_id, category_id, amount) VALUES (:budgetID, :categoryID, :percentAmount)",
-                   budgetID=newBudgetID, categoryID=categoryID["id"], percentAmount=categoryID["amount"])
+    addCategory(newBudgetID, categoryIDS)
 
     return budget
+
+
+# When creating or updating a budget, add the spending categories and % budgeted per category to a budgets record in the DB
+def addCategory(budgetID, categoryIDS):
+    # Insert a record for each category in the new budget
+    for categoryID in categoryIDS:
+        rows = db.execute("INSERT INTO budgetCategories (budgets_id, category_id, amount) VALUES (:budgetID, :categoryID, :percentAmount)",
+                          budgetID=budgetID, categoryID=categoryID["id"], percentAmount=categoryID["amount"])
 
 
 # Update an existing budget
 # Note: due to DB design, this is a X step process: (write similar as create / above)
 def updateBudget(oldBudgetName, budget, userID):
     # Query the DB for the budget ID
-    budgetID = getBudgetID(oldBudgetName, userID)
+    oldBudgetID = getBudgetID(oldBudgetName, userID)
 
     # Verify the budget name is not a duplicate of an existing budget
     uniqueBudgetName = isUniqueBudgetName(
-        budget["name"], budgetID, userID)
+        budget["name"], oldBudgetID, userID)
     if not uniqueBudgetName:
         return {"apology": "Please enter a unique budget name, not a duplicate."}
 
-    # TODO - verifyCategoryExists before proceeding with updating. Defense programming here to make sure the categories actually exist.
-
     # Update the budget name and amount in DB
     db.execute("UPDATE budgets SET name = :budgetName, amount = :budgetAmount WHERE id = :oldBudgetID AND user_id = :usersID",
-               budgetName=budget["name"], budgetAmount=budget["amount"], oldBudgetID=budgetID, usersID=userID)
+               budgetName=budget["name"], budgetAmount=budget["amount"], oldBudgetID=oldBudgetID, usersID=userID)
 
     # Delete existing category records for the budget
     db.execute("DELETE FROM budgetCategories WHERE budgets_id = :oldBudgetID",
-               oldBudgetID=budgetID)
+               oldBudgetID=oldBudgetID)
 
     # Get category IDs from DB for the new budget
     categoryIDS = getBudgetCategoryIDS(budget["categories"], userID)
 
     # Insert a record for each category in the new budget
-    # TODO extract this method into something else since it's a duplicate in createBudget too
-    for categoryID in categoryIDS:
-        db.execute("INSERT INTO budgetCategories (budgets_id, category_id, amount) VALUES (:oldBudgetID, :categoryID, :percentAmount)",
-                   oldBudgetID=budgetID, categoryID=categoryID["id"], percentAmount=categoryID["amount"])
+    addCategory(oldBudgetID, categoryIDS)
 
     return budget
 
