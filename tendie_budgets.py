@@ -1,5 +1,5 @@
 import re
-import tendie_dashboard
+import tendie_categories
 
 from cs50 import SQL
 from flask import request, session
@@ -228,7 +228,7 @@ def isUniqueBudgetName(budgetName, budgetID, userID):
 def getUpdatableBudget(budget, userID):
 
     # Get the users library of spend categories
-    categories = tendie_dashboard.getSpendCategories(userID)
+    categories = tendie_categories.getSpendCategories(userID)
 
     # Get the budget's spend categories and % amount for each category
     budgetCategories = db.execute("SELECT DISTINCT categories.name, budgetCategories.amount FROM budgetCategories INNER JOIN categories ON budgetCategories.category_id = categories.id INNER JOIN budgets ON budgetCategories.budgets_id = budgets.id WHERE budgets.id = :budgetsID",

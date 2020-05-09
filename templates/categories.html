@@ -1,0 +1,198 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Manage Spend Categories
+{% endblock %}
+
+{% block main %}
+    <h1>Manage Spend Categories</h1>
+    <br>
+    {% if newCategory != None %}
+      <div class="alert alert-dismissible alert-success">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>Success!</strong> You created a new category called '<strong>{{ newCategory }}</strong>'.
+      </div>
+    {% elif renamedCategory != None %}
+      <div class="alert alert-dismissible alert-success">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>Cya later '{{ renamedCategory[0] }}' 👋</strong> You renamed '<strong>{{ renamedCategory[0] }}</strong>' to '<strong>{{ renamedCategory[1] }}</strong>'.
+      </div>
+    {% elif deleteCategory != None %}
+      <div class="alert alert-dismissible alert-danger">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>POOF!</strong> You deleted the category '<strong>{{ deleteCategory }}</strong>'.
+      </div>
+    {% endif %}
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Create a new spending category</h5>
+            <p>Categorize your common expenses to help track spending.</p>
+            <p>
+              <a class="btn btn-primary" data-toggle="collapse" href="#collapseCategory" role="button" aria-expanded="false" aria-controls="collapseCategory">Create Category</a>
+            </p>
+          </div>
+          <div class="collapse" id="collapseCategory">
+              <form action="/categories" id="createCategory" method="post">
+                <div class="form-group">
+                    <label class="col-form-label col-form-label-sm" for="name">Category Name</label>
+                    <input class="form-control form-control-sm" type="text" name="createName" id="name" form='createCategory' placeholder="e.g. Loans" pattern="^([a-zA-Z0-9_\s\-]*)$" title="Please enter a name without special characters except underscores, spaces, and hyphens" maxlength="99" required>
+                </div>
+                <p><button type="submit" id="btnCreateCategory" name="btnCreateCategory" class="btn btn-success">Save</button></p>
+              </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Update existing categories</h5>
+            {% if categories %}
+                {% for category in categories %}
+                  <div class="btn-group">
+                    <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      {{ category["name"] }}
+                    </button>
+                    <div class="dropdown-menu">
+                      {% if category["budgets"] %}
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#renameModal" data-category="{{ category['name'] }}" data-budgets="{% for budget in category['budgets'] %}{{ budget }};{% endfor %}">Rename</a>
+                      {% else %}
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#renameModal" data-category="{{ category['name'] }}" data-budgets="">Rename</a>
+                      {% endif %}
+                      <div class="dropdown-divider"></div>
+                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#deleteModal" data-category="{{ category['name'] }}">Delete</a>
+                    </div>
+                  </div>
+                  <br><br>
+                {% endfor %}
+            {% else %}
+                <p>You have not created any spending categories yet 😢</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category rename modal -->
+    <div class="modal fade" id="renameModal" tabindex="-1" role="dialog" aria-labelledby="renameModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="renameModalLabel">Rename Category</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form action="/categories" id="renameCategory" method="post">
+              <div class="form-group">
+                <label for="oldname" class="col-form-label">Old Name:</label>
+                <input type="text" class="form-control" name="oldname" id="oldname" value="" form="renameCategory" readonly>
+              </div>
+              <div class="form-group">
+                <label for="newname" class="col-form-label">New Name:</label>
+                <input type="text" class="form-control" name="newname" id="newname" value="" form="renameCategory" placeholder="New category name" pattern="^([a-zA-Z0-9_\s\-]*)$" title="Please enter a name without special characters except underscores, spaces, and hyphens" maxlength="45" required>
+              </div>
+            </form>
+            <p class="text-danger"><strong>Are you sure you want to rename this category?</strong></p>
+            <ul class="text-danger" style="text-align:left">
+              <li class="text-danger small">Expense history using the old name will be updated to the new name</li>
+              <li class="text-danger small" id="renameAlert_msg"></li>
+              <ul class="text-danger small" id="renameAlert_budgets">
+              </ul>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-success" form="renameCategory" id="btnRenameCategory" name="btnRenameCategory">Save Changes</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Category delete modal -->
+    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel">Delete Category</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <form action="/categories" id="deleteCategory" method="post">
+              <div class="form-group">
+                <input type="hidden" class="form-control" name="delete" id="delete" value="" readonly>
+              </div>
+            </form>
+            <p class="text-danger"><strong>Are you sure you want to delete this category?</strong></p>
+            <ul class="text-danger" style="text-align:left">
+              <li class="text-danger small">The category will no longer be selectable in Expenses or Budgets</li>
+              <li class="text-danger small">Expense history using the old name will not be affected unless you update the expense and choose a new category</li>
+              <li class="text-danger small">Reports and Dashboard charts will continue to show the old name unless you update your expense history to a new category</li>
+            </ul>
+          </div>
+          <div class="modal-footer">
+            <button type="submit" class="btn btn-danger" form="deleteCategory" id="btnDeleteCategory" name="btnDeleteCategory">Delete Category</button>
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // While the modal is showing (CSS transitions aren't 100% finished yet), set the title of the modal and the fields
+      $('#renameModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget) // Button that triggered the modal
+        var category = button.data('category') // Extract info from data-* attributes
+        var budgets_string = button.data('budgets') // Get the semi-colon delimitted string of budgets that are associated with the category
+        var budgets = budgets_string.split(";")
+        var modal = $(this)
+        modal.find('.modal-title').text("Rename category '" + category + "'")
+        modal.find('#oldname').val(category)
+        msg = modal.find('#renameAlert_msg');
+        msg_budgets = modal.find('#renameAlert_budgets');
+        // Loop through the budgets associated with a category. note: length of budgets will be 1 due to empty string when no budgets exist.
+        if (budgets.length > 1) {
+          msg[0].innerText = "The following budgets will be updated to the new name:";
+          for (i = 0; i < budgets.length; i++){
+            // Last element is an empty string due to semicolon separated values, so ignore it in the loop to avoid having a blank list item
+            if (budgets[i] != ''){
+              msg_budgets[0].innerHTML += "<li>" + budgets[i] + "</li>";
+            }
+          }
+        }
+        else {
+          msg[0].innerText = "No budgets will be affected by this change";
+        }
+      })
+
+      // As the modal becomes hidden (CSS transitions are 100% finished), clear the 'newname' and alert message fields
+      $('#renameModal').on('hidden.bs.modal', function () {
+        $('#newname').val('');
+        $('#renameAlert_budgets').empty();
+      })
+
+      $('#deleteModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget) // Button that triggered the modal
+        var category = button.data('category') // Extract info from data-* attributes
+        var modal = $(this)
+        modal.find('.modal-title').text("Delete category '" + category + "'")
+        modal.find('#delete').val(category)
+      })
+
+      // Set focus to new category name field when collapsed area is shown
+      $('#collapseCategory').on('shown.bs.collapse', function () {
+        $('#name').trigger('focus')
+      })
+
+      // Clear new category name field when collapsed area is hidden
+      $('#collapseCategory').on('hidden.bs.collapse', function () {
+        $('#name').val('')
+      })
+
+    </script>
+
+{% endblock %}

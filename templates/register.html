@@ -5,7 +5,11 @@ Register
 {% endblock %}
 
 {% block main %}
-<img class="mb-4" src="/static/logo.svg" alt="" width="72" height="72">
+<h2>Tendie Tracker</h2>
+<small class="text-muted"><em>Every tender counts</em></small><br>
+<img class="mb-4" src="/static/logo.png" alt="Tendie Tracker logo" width="90" height="90">
+
+<br>
 <h1 class="h3 mb-3 font-weight-normal">Register an account</h1>
 {% if username %}
 <div class="alert alert-dismissible alert-danger">
@@ -16,23 +20,21 @@ Register
 {% endif %}
 <form action="/register" method="post">
     <div class="form-group">
-        <label for="username">Username</label>
         <input autocomplete="off" autofocus class="form-control validate-register" name="username" id="username"
-            type="text" required pattern="^[a-zA-Z0-9]{3,16}$"
+            type="text" placeholder="Username" required pattern="^[a-zA-Z0-9]{3,16}$"
             title="Must contain between 3 and 16 characters, lower/uppcase letters and numbers only">
     </div>
     <div class="form-group">
-        <label for="password">Password</label>
-        <input class="form-control validate-register" name="password" id="password" type="password" required
+        <input class="form-control validate-register" name="password" id="password" type="password" placeholder="Password" required
             pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}"
             title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters">
         <small class="form-text text-muted">Your password is safe with us. We <strong>do not</strong> store plain-text
             passwords in our database ❤</small>
     </div>
+    <br>
     <button class="btn btn-primary" id="btnRegister" type="submit">Register</button>
 </form>
-<br>
-<p class="text-muted">Coming soon: sign-up with your Facebook/Twitter/Google account!</p>
+
 {# TODO 
 
 1) Password validation helper: https://www.w3schools.com/howto/howto_js_password_validation.asp

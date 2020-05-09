@@ -9,15 +9,6 @@ from flask_session import Session
 db = SQL("sqlite:///budget.db")
 
 
-# Gets and return the users spend categories
-def getSpendCategories(userID):
-    categories = db.execute(
-        "SELECT categories.name FROM userCategories INNER JOIN categories ON userCategories.category_id = categories.id WHERE userCategories.user_id = :usersID",
-        usersID=userID)
-
-    return categories
-
-
 # Get the users total income
 def getIncome(userID):
     income = db.execute(

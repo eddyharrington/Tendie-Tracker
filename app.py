@@ -6,6 +6,7 @@ import config
 import tendie_dashboard
 import tendie_expenses
 import tendie_budgets
+import tendie_categories
 
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -151,7 +152,7 @@ def index():
         spending_month = []
 
         # Get the users spend categories (for quick expense modal)
-        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+        categories = tendie_categories.getSpendCategories(session["user_id"])
 
         # Get todays date (for quick expense modal)
         date = datetime.today().strftime('%Y-%m-%d')
@@ -234,7 +235,7 @@ def addexpenses():
     # User reached route via GET
     else:
         # Get the users spend categories
-        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+        categories = tendie_categories.getSpendCategories(session["user_id"])
 
         # Render expense page
         date = datetime.today().strftime('%Y-%m-%d')
@@ -252,7 +253,7 @@ def history():
         history = tendie_expenses.getHistory(session["user_id"])
 
         # Get the users spend categories
-        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+        categories = tendie_categories.getSpendCategories(session["user_id"])
 
         return render_template("history.html", history=history, categories=categories, isDeleteAlert=False)
 
@@ -288,7 +289,7 @@ def history():
 
             # Get the users expense history, spend categories, and then render the history page w/ delete alert
             history = tendie_expenses.getHistory(session["user_id"])
-            categories = tendie_dashboard.getSpendCategories(
+            categories = tendie_categories.getSpendCategories(
                 session["user_id"])
             return render_template("history.html", history=history, categories=categories, isDeleteAlert=True)
 
@@ -381,7 +382,7 @@ def createbudget():
         budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
 
         # Get the users spend categories
-        categories = tendie_dashboard.getSpendCategories(session["user_id"])
+        categories = tendie_categories.getSpendCategories(session["user_id"])
 
         return render_template("createbudget.html", income=income, budgeted=budgeted, categories=categories)
 
@@ -434,6 +435,167 @@ def updatebudget(urlvar_budgetname):
 
         # Render the budget update page
         return render_template("updatebudget.html", income=income, budgeted=budgeted, budget=budget)
+
+
+@app.route("/categories", methods=["GET", "POST"])
+@login_required
+def categories():
+    """Manage spending categories"""
+
+    # User reached route via POST
+    if request.method == "POST":
+
+        # Initialize user's actions
+        userHasSelected_newCategory = False
+        userHasSelected_renameCategory = False
+        userHasSelected_deleteCategory = False
+
+        # Initialize user alerts
+        alert_newCategory = None
+        alert_renameCategory = None
+        alert_deleteCategory = None
+
+        # Determine what action was selected by the user (button/form trick from: https://stackoverflow.com/questions/26217779/how-to-get-the-name-of-a-submitted-form-in-flask)
+        if "btnCreateCategory" in request.form:
+            userHasSelected_newCategory = True
+        elif "btnRenameCategory" in request.form:
+            userHasSelected_renameCategory = True
+        elif "btnDeleteCategory" in request.form:
+            userHasSelected_deleteCategory = True
+        else:
+            return apology("Doh! Spend Categories is drunk. Try again!")
+
+        # Get new category details and create a new record in the DB
+        if userHasSelected_newCategory:
+
+            # Get the new name provided by user
+            newCategoryName = request.form.get("createName").strip()
+
+            # Check to see if the new name already exists in the database (None == does not exist)
+            categoryID = tendie_categories.getCategoryID(newCategoryName)
+
+            # Category exists in the database already
+            if categoryID:
+
+                # Make sure the user isn't trying to add a category they already have by passing in the users ID now (None == does not exists)
+                existingID = tendie_categories.getCategoryID(
+                    newCategoryName, session["user_id"])
+                if (existingID):
+                    return apology("You already have '" + newCategoryName + "' category")
+                # Add the category to the users account
+                else:
+                    tendie_categories.addCategory_User(
+                        categoryID, session["user_id"])
+
+            # Category does not exist in the DB already - create a new category and then add it to the users account
+            else:
+                # Creates a new category in the DB
+                newCategoryID = tendie_categories.addCategory_DB(
+                    newCategoryName)
+
+                # Adds the category to the users account
+                tendie_categories.addCategory_User(
+                    newCategoryID, session["user_id"])
+
+            # Set the alert message for user
+            alert_newCategory = newCategoryName
+
+        # Get renamed category details and update records in the DB
+        if userHasSelected_renameCategory:
+
+            # Get the new/old names provided by user
+            oldCategoryName = request.form.get("oldname").strip()
+            newCategoryName = request.form.get("newname").strip()
+
+            # Check to see if the *old* category actually exists in the database (None == does not exist)
+            oldCategoryID = tendie_categories.getCategoryID(oldCategoryName)
+
+            # Old category does not exists in the database, throw error
+            if oldCategoryID is None:
+                return apology("The category you're trying to rename doesn't exist")
+
+            # Check to see if the *new* name already exists in the database (None == does not exist)
+            newCategoryID = tendie_categories.getCategoryID(newCategoryName)
+
+            # Category exists in the database already
+            if newCategoryID:
+
+                # Make sure the user isn't trying to rename to a category they already have by passing in the users ID now (None == does not exists)
+                existingID = tendie_categories.getCategoryID(
+                    newCategoryName, session["user_id"])
+                if existingID:
+                    return apology("You already have '" + newCategoryName + "' category")
+
+                # Get the new category name from the DB (prevents string upper/lowercase inconsistencies that can result from using the users input from the form instead of the DB)
+                newCategoryNameFromDB = tendie_categories.getSpendCategoryName(
+                    newCategoryID)
+
+                # Rename the category
+                tendie_categories.renameCategory(
+                    oldCategoryID, newCategoryID, oldCategoryName, newCategoryNameFromDB, session["user_id"])
+
+            # Category does not exist in the DB already - create a new category and then add it to the users account
+            else:
+                # Creates a new category in the DB
+                newCategoryID = tendie_categories.addCategory_DB(
+                    newCategoryName)
+
+                # Rename the category
+                tendie_categories.renameCategory(
+                    oldCategoryID, newCategoryID, oldCategoryName, newCategoryName, session["user_id"])
+
+            # Set the alert message for user
+            alert_renameCategory = [oldCategoryName, newCategoryName]
+
+        # Get deleted category details and update records in the DB
+        if userHasSelected_deleteCategory:
+
+            # Get the name of the category the user wants to delete
+            deleteName = request.form.get("delete").strip()
+
+            # Check to see if the category actually exists in the database (None == does not exist)
+            categoryID = tendie_categories.getCategoryID(deleteName)
+
+            # Category does not exists in the database, throw error
+            if categoryID is None:
+                return apology("The category you're trying to delete doesn't exist")
+
+            # Get budgets that are currently using the category they want to delete
+            budgets = tendie_categories.getBudgetsFromSpendCategory(
+                categoryID, session["user_id"])
+
+            # Delete categories from the users budgets
+            if budgets:
+                tendie_categories.deleteSpendCategoriesInBudgets(
+                    budgets, categoryID)
+
+            # Delete the category from the users account
+            # TODO what should happen when a user deletes a category, and a budget that was using it now has NO categories checked?
+            tendie_categories.deleteCategory_User(
+                categoryID, session["user_id"])
+
+            # Set the alert message for user
+            alert_deleteCategory = deleteName
+
+        # Get the users spend categories
+        categories = tendie_categories.getSpendCategories(session["user_id"])
+
+        return render_template("categories.html", categories=categories, newCategory=alert_newCategory, renamedCategory=alert_renameCategory, deleteCategory=alert_deleteCategory)
+
+    # User reached route via GET
+    else:
+        # Get the users spend categories
+        categories = tendie_categories.getSpendCategories(session["user_id"])
+
+        # Get the budgets associated with each spend category
+        categoryBudgets = tendie_categories.getBudgetsSpendCategories(
+            session["user_id"])
+
+        # Generate a single data structure for storing all categories and their associated budgets
+        categoriesWithBudgets = tendie_categories.generateSpendCategoriesWithBudgets(
+            categories, categoryBudgets)
+
+        return render_template("categories.html", categories=categoriesWithBudgets, newCategory=None, renamedCategory=None, deleteCategory=None)
 
 
 # Handle errors by rendering apology
