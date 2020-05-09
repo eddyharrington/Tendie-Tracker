@@ -1,0 +1,154 @@
+{% extends "layout.html" %}
+
+{% block styles %}
+        <!--Data Tables-->
+        <link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet">
+        <!--Data Tables Plugins (export buttons)-->
+        <link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" rel="stylesheet">
+        <!--Responsive Expense Tables-->
+        <link href="/static/expenses.css" rel="stylesheet">
+{% endblock %}
+
+{% block scripts %}
+        <!--Chart.js-->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+        <!--Data Tables-->
+        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+        <!--Data Tables Plugins (export buttons)-->
+        <script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+        <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+{% endblock %}
+
+{% block title %}
+    Reports | Budgets Overview
+{% endblock %}
+
+{% block main %}
+    <h1>Budgets Report</h1>
+    <br>
+
+
+    {% if budgets %}
+    <!-- Begin Your Budgets -->
+    {% for budget in budgets %}
+    <div class="jumbotron" style="padding:2rem 1rem">
+    <div class="row">
+        <div class="col">
+            <div class="card bg-light mb-3" style="max-width: 25rem;">
+              <div class="card-header"><strong><a href="/updatebudget/{{ budget['name'] }}">{{ budget["name"] }}</a></strong></div>
+              <div class="card-body-dash">
+                {% set percent = ((budget["spent"] / budget["amount"]) * 100) %}
+                {% set totalBudgetAmount = (budget["amount"] | usd) %}
+                {% set totalBudgetAmount = totalBudgetAmount[:-3] %}
+                <p>You've spent {{ percent | round | int }}% of your {{ totalBudgetAmount }} budget</p>
+                <div class="chart-container" style="position: relative; height:23vh">
+                    <canvas id="budgetChart.{{ loop.index }}"></canvas>
+                </div>
+              </div>
+            </div>
+        </div>
+        <div class="col">
+            {% if budget["expenses"] %}
+            <!--Table functionality courtesty of DataTables.net-->
+            <table id="budgetTable_{{ loop.index }}" class="display" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Description</th>
+                        <th>Category</th>
+                        <th>Date</th>
+                        <th>Payer</th>
+                        <th>Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for expense in budget["expenses"] %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ expense["description"] }}</td>
+                        <td>{{ expense["category"] }}</td>
+                        <td>{{ expense["expenseDate"] }}</td>
+                        <td>{{ expense["payer"] }}</td>
+                        <td>{{ expense["amount"] | usd}}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <br>
+            {% else %}
+            <p><strong>You have no expenses logged against this budget.</strong></p>
+            {% endif %}
+        </div>
+    </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="col">
+        <p style="text-align:left">You have no budgets yet.</p>
+    </div>
+    <!-- End Your Budgets -->
+    {% endif %}
+
+
+    <script>
+        //Data Table
+        {% if budgets %}
+        {% for budgets in budgets %}
+        $(document).ready(function() {
+            $('#budgetTable_{{loop.index}}').DataTable( {
+                "order": [[ 5, "desc" ]],
+                "scrollY":        "300px",
+                "scrollCollapse": true,
+                "paging":         false,
+                dom: 'Bfrtip',
+                buttons: [
+                    'copy', 'csv', 'excel'
+                ],
+                "searching": false
+            } );
+        } );
+        {% endfor %}
+        {% endif %}
+
+        {% if budgets %}
+        // Begin Budget Charts
+        {% for budget in budgets %}
+        var ctx_{{ loop.index }} = document.getElementById('budgetChart.{{ loop.index }}').getContext('2d');
+        var budgetChart_{{ loop.index }} = new Chart(ctx_{{ loop.index }}, {
+            type: 'doughnut',
+            data: {
+                labels: ['Spent', 'Remaining'],
+                datasets: [{
+                    label: '{{ budget["name"] }}',
+                    data: [{{ budget["spent"] }}, {{ budget["remaining"] }}],
+                    backgroundColor: [
+                        'rgba(240, 173, 78, 1)',
+                        'rgba(2, 184, 117, 1)'
+                    ],
+                    borderColor: [
+                        'rgba(192, 138, 62, 1)',
+                        'rgba(1, 147, 93, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    labels: {
+                        fontColor: 'black'
+                    }
+                }
+            }
+        });
+        {% endfor %}
+        // End Budget Charts
+        {% endif %}
+
+    </script>
+
+{% endblock %}
+

@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Reports
+{% endblock %}
+
+{% block main %}
+    <h1>Reports</h1>
+    <br>
+
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Budget Overview</h5>
+            <p>View your budgets and budget expenses in this report.</p>
+            <a href="/budgetsreport" class="btn btn-success">View Report</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Monthly Spending</h5>
+            <p>View your month-over-month expenses.</p>
+            <a href="/monthlyreport" class="btn btn-success">View Report</a>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Spending Categories</h5>
+            <p>View your year-to-date spending by category.</p>
+            <a href="/spendingreport" class="btn btn-success">View Report</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Payer</h5>
+            <p>View how spending is being split between payers.</p>
+            <a href="#" class="btn btn-success">View Report</a>
+          </div>
+        </div>
+      </div>
+    </div>
+{% endblock %}
