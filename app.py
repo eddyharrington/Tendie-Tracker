@@ -560,19 +560,8 @@ def categories():
             if categoryID is None:
                 return apology("The category you're trying to delete doesn't exist")
 
-            # Get budgets that are currently using the category they want to delete
-            budgets = tendie_categories.getBudgetsFromSpendCategory(
-                categoryID, session["user_id"])
-
-            # Delete categories from the users budgets
-            if budgets:
-                tendie_categories.deleteSpendCategoriesInBudgets(
-                    budgets, categoryID)
-
-            # Delete the category from the users account
-            # TODO what should happen when a user deletes a category, and a budget that was using it now has NO categories checked?
-            tendie_categories.deleteCategory_User(
-                categoryID, session["user_id"])
+            # Delete the category
+            tendie_categories.deleteCategory(categoryID, session["user_id"])
 
             # Set the alert message for user
             alert_deleteCategory = deleteName

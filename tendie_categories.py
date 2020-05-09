@@ -172,3 +172,16 @@ def renameCategory(oldCategoryID, newCategoryID, oldCategoryName, newCategoryNam
 
     # Update users expense records that are using the old category to the new one
     updateExpenseCategoryNames(oldCategoryName, newCategoryName, userID)
+
+
+# Delete a category
+def deleteCategory(categoryID, userID):
+    # Get budgets that are currently using the category they want to delete
+    budgets = getBudgetsFromSpendCategory(categoryID, userID)
+
+    # Delete categories from the users budgets
+    if budgets:
+        deleteSpendCategoriesInBudgets(budgets, categoryID)
+
+    # Delete the category from the users account
+    deleteCategory_User(categoryID, userID)
