@@ -15,6 +15,15 @@ def getSpendCategories(userID):
     return categories
 
 
+# Gets and return the users *inactive* spend categories from their expenses (e.g. they deleted a category and didn't update their expense records that still use the old category name)
+def getSpendCategories_Inactive(userID):
+    categories = db.execute(
+        "SELECT category FROM expenses WHERE user_id = :usersID AND category NOT IN(SELECT categories.name FROM userCategories INNER JOIN categories ON categories.id = userCategories.category_id WHERE user_id = :usersID) GROUP BY category",
+        usersID=userID)
+
+    return categories
+
+
 # Get and return all spend categories from the category library
 def getSpendCategoryLibrary():
     categories = db.execute("SELECT id, name FROM categories")

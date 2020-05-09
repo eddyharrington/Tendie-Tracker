@@ -144,7 +144,7 @@ def getMonthlySpending(userID):
 
     # Query note: pulls data for months of the *current* calendar year
     spending_month_query = db.execute(
-        "SELECT SUM(amount) AS 'amount', LTRIM(strftime('%m',expenseDate),0) AS 'month' FROM expenses WHERE strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND user_id = :usersID GROUP BY (strftime('%m',expenseDate))",
+        "SELECT LTRIM(strftime('%m',expenseDate),0) AS 'month', SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID AND expenseDate > date('now','-11 month','start of month','-1 day') GROUP BY (strftime('%m',expenseDate))",
         usersID=userID)
 
     for record in spending_month_query:

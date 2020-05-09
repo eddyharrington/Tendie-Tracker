@@ -8,6 +8,7 @@ import tendie_dashboard
 import tendie_expenses
 import tendie_budgets
 import tendie_categories
+import tendie_reports
 
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -601,17 +602,8 @@ def reports():
 def budgetsreport():
     """View year-to-date spending by category report"""
 
-    # Create data structure to hold users category spending data
-    budgets = []
-
-    # Get every budgets spent/remaining for the user
-    budgets = tendie_dashboard.getBudgets(session["user_id"])
-
-    # Loop through the budgets and add a new key/value pair to hold expense details per budget
-    for record in budgets:
-        expenseDetails = db.execute("SELECT expenses.description, expenses.category, expenses.expenseDate, expenses.payer, expenses.amount FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-                                    usersID=session["user_id"], budgetID=record["id"])
-        record["expenses"] = expenseDetails
+    # Generate a data structure that combines the users budgets and the expenses that have categories which match budgets
+    budgets = tendie_reports.generateBudgetsReport(session["user_id"])
 
     return render_template("budgetsreport.html", budgets=budgets)
 
@@ -621,24 +613,10 @@ def budgetsreport():
 def monthlyreport():
     """View monthly spending report"""
 
-    # Create data structure to hold users monthly spending data
-    spending_month_chart = []
-    month = {"name": None, "amount": None}
+    # Generate a data structure that combines the users monthly spending data needed for chart and table
+    monthlySpending = tendie_reports.generateMonthlyReport(session["user_id"])
 
-    # Get the spending data from DB for chart
-    spending_month_chart_query = db.execute(
-        "SELECT LTRIM(strftime('%m',expenseDate),0) AS 'month', SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID AND expenseDate > date('now','-11 month','start of month','-1 day') GROUP BY (strftime('%m',expenseDate))", usersID=session["user_id"])
-    for record in spending_month_chart_query:
-        month["name"] = calendar.month_abbr[int(record["month"])]
-        month["amount"] = record["amount"]
-
-        spending_month_chart.append(month.copy())
-
-    # Get the spending date from DB for table
-    spending_month_table = db.execute(
-        "SELECT description, category, expenseDate, amount, payer FROM expenses WHERE user_id = :usersID AND expenseDate > date('now','-11 month','start of month','-1 day') ORDER BY submitTime ASC", usersID=session["user_id"])
-
-    return render_template("monthlyreport.html", spending_month_chart=spending_month_chart, spending_month_table=spending_month_table)
+    return render_template("monthlyreport.html", monthlySpending=monthlySpending)
 
 
 @app.route("/spendingreport", methods=["GET"])
@@ -646,79 +624,11 @@ def monthlyreport():
 def spendingreport():
     """View spending categories report"""
 
-    # Get chart data for spending trends
-    spending_trends_chart = tendie_dashboard.getSpendingTrends(
+    # Generate a data structure that combines the users all-time spending data for chart and table
+    spendingReport = tendie_reports.generateSpendingTrendsReport(
         session["user_id"])
 
-    # Data structure to hold data for spending trends table
-    category = {"name": None, "expenseMonth": 0,
-                "expenseCount": 0, "amount": 0}
-    categories = []
-    spending_trends_table = {
-        "January": [],
-        "February": [],
-        "March": [],
-        "April": [],
-        "May": [],
-        "June": [],
-        "July": [],
-        "August": [],
-        "September": [],
-        "October": [],
-        "November": [],
-        "December": []
-    }
-
-    # Get all of the users categories first (doesn't include old categories the user deleted but are still tracked in Expenses)
-    categories_active = db.execute(
-        "SELECT categories.name FROM userCategories INNER JOIN categories ON categories.id = userCategories.category_id WHERE user_id = :usersID", usersID=session["user_id"])
-
-    # Get any categories that are in expenses but no longer exist as a selectable category for the user (because they deleted the category)
-    categories_inactive = db.execute(
-        "SELECT category FROM expenses WHERE user_id = :usersID AND category NOT IN(SELECT categories.name FROM userCategories INNER JOIN categories ON categories.id = userCategories.category_id WHERE user_id = :usersID) GROUP BY category", usersID=session["user_id"])
-
-    # First fill using the users current categories, then any categories from Expenses (expenses can use old categories that were renamed/delete unless the user chooses to update their expense history)
-    for activeCategory in categories_active:
-        category["name"] = activeCategory["name"]
-        categories.append(category.copy())
-    for inactiveCategory in categories_inactive:
-        category["name"] = inactiveCategory["category"]
-        categories.append(category.copy())
-
-    # Place a deep copy of the categories into each month (need deep copy here because every category may have unique spend data month to month. TODO: optimize this for memory/performance later)
-    for month in spending_trends_table.keys():
-        spending_trends_table[month] = copy.deepcopy(categories)
-
-    # Get expense data for each category by month (retrieves the total amount of expenses per category by month, and the total count of expenses per category by month. Assumes there is at least 1 expense for the category)
-    spending_trends_table_query = db.execute(
-        "SELECT LTRIM(strftime('%m',expenseDate),0) AS 'monthOfCategoryExpense', category AS 'name', COUNT(category) AS 'count', SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID GROUP BY strftime('%m',expenseDate), category ORDER BY COUNT(category) DESC", usersID=session["user_id"])
-
-    # Loop thru each monthly category expense from above DB query and update the data structure that holds all monthly category expenses
-    for categoryExpense in spending_trends_table_query:
-        # Get the key (month) for the data structure
-        monthOfExpense = calendar.month_name[int(
-            categoryExpense["monthOfCategoryExpense"])]
-        # Traverse the data structure: 1) go to the dict month based on the category expense date, 2) loop thru each dict category until a match in name occurs with the expense, 3) update the dict month/amount/count properties to match the DB record
-        for category in spending_trends_table[monthOfExpense]:
-            if category["name"] == categoryExpense["name"]:
-                category["expenseMonth"] = categoryExpense["monthOfCategoryExpense"]
-                category["expenseCount"] = categoryExpense["count"]
-                category["amount"] = categoryExpense["amount"]
-                break
-            else:
-                continue
-
-    # Calculates and stores the amount spent per category for the table (note: can't get this to work in jinja with the spending_trends_table dict because of how jinja scopes variables. TODO: rethink data-structure to combine these)
-    numberOfCategories = len(categories)
-    categoryTotal = 0
-    # Loops through every month per category and sums up the monthly amounts
-    for i in range(numberOfCategories):
-        for month in spending_trends_table.keys():
-            categoryTotal += spending_trends_table[month][i]["amount"]
-        categories[i]["amount"] = categoryTotal
-        categoryTotal = 0
-
-    return render_template("spendingreport.html", spending_trends_chart=spending_trends_chart, spending_trends_table=spending_trends_table, categories=categories)
+    return render_template("spendingreport.html", spending_trends_chart=spendingReport["chart"], spending_trends_table=spendingReport["table"], categories=spendingReport["categories"])
 
 
 # Handle errors by rendering apology

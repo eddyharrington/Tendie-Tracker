@@ -29,7 +29,7 @@
     <h1>Monthly Spending Report</h1>
     <br>
 
-    {% if spending_month_chart %}
+    {% if monthlySpending["chart"] %}
     <!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
     <div class="chart-container" style="position: relative; height:30vh">
         <canvas id="monthlyChart" width="400" height="400"></canvas>
@@ -37,7 +37,7 @@
     <br>
     {% endif %}
 
-    {% if spending_month_table %}
+    {% if monthlySpending["table"] %}
     <h3>Last 12 months of spending</h3>
     <!--Table functionality courtesty of DataTables.net-->
     <table id="monthlyExpenses" class="display" style="width:100%">
@@ -52,7 +52,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for record in spending_month_table %}
+            {% for record in monthlySpending["table"] %}
             <tr>
                 <td>{{ loop.index }}</td>
                 <td>{{ record["description"] }}</td>
@@ -85,15 +85,15 @@
             } );
         } );
 
-        {% if spending_month_chart %}
+        {% if monthlySpending["chart"] %}
         // Begin Monthly Chart
         var ctx = document.getElementById('monthlyChart').getContext('2d');
         var monthlyChart = new Chart(ctx, {
             type: 'bar',
             data: {
                 labels: [
-                    {% for record in spending_month_chart %}
-                    {% if loop.index != (spending_month_chart | length) %}
+                    {% for record in monthlySpending["chart"] %}
+                    {% if loop.index != (monthlySpending["chart"] | length) %}
                     '{{ record["name"] }}',
                     {% else %}
                     '{{ record["name"] }}'
@@ -103,8 +103,8 @@
                 datasets: [{
                     label: 'Total $ Spent',
                     data: [
-                        {% for record in spending_month_chart %}
-                        {% if loop.index != (spending_month_chart | length) %}
+                        {% for record in monthlySpending["chart"] %}
+                        {% if loop.index != (monthlySpending["chart"] | length) %}
                         '{{ record["amount"] }}',
                         {% else %}
                         '{{ record["amount"] }}'
