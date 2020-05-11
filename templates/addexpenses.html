@@ -11,65 +11,56 @@
 {% block main %}
     <h1>Add Expenses</h1>
     <br>
-    <div class="alert alert-dismissible alert-light">
-      <button type="button" class="close" data-dismiss="alert">&times;</button>
-      <strong>Instructions</strong>
-      <ol style="text-align:left">
-        <li>Fill out the row by providing a description, category, date, amount, and payer for your expense(s)</li>
-        <li>Add additional rows as needed by clicking the "New Row" button (up to 10 rows max)</li>
-        <li>Select and delete rows as needed by clicking a row number in the "#" column and then clicking the "Delete Row" button</li>
-        <li>Save your expense(s) by clicking the "Save" button</li>
-      </ol>
-    </div>
-        <form action="/addexpenses" method="post" id="expenseForm">
-            <div class="table-responsive-sm">
-            <table id="expenseTable" class="table table-hover">
-              <thead>
-                <tr>
-                  <th scope="col">#</th>
-                  <th scope="col">Description</th>
-                  <th scope="col">Category</th>
-                  <th scope="col">Date</th>
-                  <th scope="col">Payer</th>
-                  <th scope="col">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td onclick="selectRow(this);">
-                    1<br>
-                  </td>
-                  <td>
-                      <textarea class="form-control-sm" name="description.1" form="expenseForm" required maxlength="200" autofocus></textarea>
-                  </td>
-                  <td>
-                      <select id="category" class="form-control-sm" name="category.1" form="expenseForm" required>
-                        {% for category in categories %}
-                          <option value="{{ category['name'] }}">{{ category['name'] }}</option>
-                        {% endfor %}
-                      </select>
-                  </td>
-                  <td>
-                      <input type="date" class="form-control-sm" name="date.1" form='expenseForm' required value="{{ date }}">
-                  </td>
-                  <td>
-                      <input type="text" class="form-control-sm" name="payer.1" form='expenseForm' maxlength="35" size="10" placeholder="Self" required>
-                  </td>
-                  <td>
-                      <!-- Modified RegEx from Gary @ StackOverflow: https://stackoverflow.com/a/16242575 -->
-                      <!-- TODO: change input type from 'text' to 'number' to remove the need for regex? Look at my implementation on budgets.html and use the same thing here -->
-                      <input type="text" class="form-control-sm" name="amount.1" form='expenseForm' size="10" placeholder="$" required maxlength="10" pattern="(?=.*?\d)^(([1-9]\d{0,2}(\d{3})*)|\d+)?(\.\d{1,2})?$" title="Format must be currency value without dollar sign or commas e.g. 1, 2.50, 1500.75">
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-            </div>
-            <br>
-            <button type="button" id="btnNewRow" class="btn btn-primary" onclick="addRow();">New Row</button>
-            <button type="button" id="btnDeleteRow" class="btn btn-danger" onclick="removeRow(selectedRow);" disabled>Delete Row</button>
-            <button type="submit" id="btnExpense" class="btn btn-success">Save</button>
-        </form>
+    <p><small>Tip: Delete a row by clicking/tapping the row number in the '#' column and then clicking/tapping the 'Delete Row' button. Must have at least 2 rows.</small></p>
+
+    <form action="/addexpenses" method="post" id="expenseForm">
+        <div class="table-responsive-sm">
+        <table id="expenseTable" class="table table-hover">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Description</th>
+              <th scope="col">Category</th>
+              <th scope="col">Date</th>
+              <th scope="col">Payer</th>
+              <th scope="col">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td onclick="selectRow(this);">1 <i class="far fa-hand-pointer"></i><br>
+              </td>
+              <td>
+                  <textarea class="form-control-sm" name="description.1" form="expenseForm" required maxlength="200" autofocus></textarea>
+              </td>
+              <td>
+                  <select id="category" class="form-control-sm" name="category.1" form="expenseForm" required>
+                    {% for category in categories %}
+                      <option value="{{ category['name'] }}">{{ category['name'] }}</option>
+                    {% endfor %}
+                  </select>
+              </td>
+              <td>
+                  <input type="date" class="form-control-sm" name="date.1" form='expenseForm' required value="{{ date }}">
+              </td>
+              <td>
+                  <input type="text" class="form-control-sm" name="payer.1" form='expenseForm' maxlength="35" size="10" placeholder="Self" required>
+              </td>
+              <td>
+                  <!-- Modified RegEx from Gary @ StackOverflow: https://stackoverflow.com/a/16242575 -->
+                  <!-- TODO: change input type from 'text' to 'number' to remove the need for regex? Look at my implementation on budgets.html and use the same thing here -->
+                  <input type="text" class="form-control-sm" name="amount.1" form='expenseForm' size="10" placeholder="$" required maxlength="10" pattern="(?=.*?\d)^(([1-9]\d{0,2}(\d{3})*)|\d+)?(\.\d{1,2})?$" title="Format must be currency value without dollar sign or commas e.g. 1, 2.50, 1500.75">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        </div>
         <br>
+        <button type="button" id="btnNewRow" class="btn btn-primary" onclick="addRow();">New Row</button>
+        <button type="button" id="btnDeleteRow" class="btn btn-danger" onclick="removeRow(selectedRow);" disabled>Delete Row</button>
+        <button type="submit" id="btnExpense" class="btn btn-success">Save</button>
+    </form>
+    <br>
 
     <script>
 
@@ -83,7 +74,6 @@
         "<tr>" +
           "<td onclick='selectRow(this);'><br></td>" +
           "<td><textarea class='form-control-sm' name='description.' form='expenseForm' required maxlength='200'></textarea></td>" +
-          // "<td><select class='form-control-sm' name='category." + rowCount + " required'><option value='Groceries'>Groceries</option><option value='Rent'>Rent</option><option value='Utilities'>Utilities</option><option value='Dining Out'>Dining Out</option><option value='Shopping'>Shopping</option><option value='Travel'>Travel</option><option value='Entertainment'>Entertainment</option></select></td>" +
           "<td><select class='form-control-sm' name='category.' form='expenseForm' required'>" +
           {% for category in categories %}
             "<option value='{{ category['name'] }}'>{{ category['name'] }}</option>" +
@@ -169,7 +159,7 @@
       let table = document.getElementById("expenseTable");
       for (let i = 0; i < rowCount; i++) {
         // Update the column numbering so row numbers are understandable to user
-        table.children[1].children[i].children[0].innerText = String(i + 1);
+        table.children[1].children[i].children[0].innerHTML = String(i+1) + " <i class='far fa-hand-pointer'></i>" 
 
         // Update the element names so every element in a row is numbered correctly/uniquely and can be sent to server via POST
         for (let j = 0; j < 5; j++) {
