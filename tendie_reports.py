@@ -22,10 +22,11 @@ def generateBudgetsReport(userID):
     budgetsReport = tendie_dashboard.getBudgets(userID)
 
     # Loop through the budgets and add a new key/value pair to hold expense details per budget
-    for record in budgetsReport:
-        expenseDetails = db.execute("SELECT expenses.description, expenses.category, expenses.expenseDate, expenses.payer, expenses.amount FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-                                    usersID=userID, budgetID=record["id"])
-        record["expenses"] = expenseDetails
+    if budgetsReport:
+        for record in budgetsReport:
+            expenseDetails = db.execute("SELECT expenses.description, expenses.category, expenses.expenseDate, expenses.payer, expenses.amount FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
+                                        usersID=userID, budgetID=record["id"])
+            record["expenses"] = expenseDetails
 
     return budgetsReport
 

@@ -9,6 +9,7 @@ import tendie_expenses
 import tendie_budgets
 import tendie_categories
 import tendie_reports
+import tendie_account
 
 from cs50 import SQL
 from flask import Flask, flash, jsonify, redirect, render_template, request, session
@@ -72,8 +73,9 @@ def register():
 
         # Insert user into the database
         hashedPass = generate_password_hash(password)
-        newUserID = db.execute("INSERT INTO users (username, hash) VALUES (:username, :hashedPass)",
-                               username=username, hashedPass=hashedPass)
+        now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        newUserID = db.execute("INSERT INTO users (username, hash, registerDate, lastLogin) VALUES (:username, :hashedPass, :registerDate, :lastLogin)",
+                               username=username, hashedPass=hashedPass, registerDate=now, lastLogin=now)
 
         # Create default spending categories for user
         db.execute("INSERT INTO userCategories (category_id, user_id) VALUES (1, :usersID), (2, :usersID), (3, :usersID), (4, :usersID), (5, :usersID), (6, :usersID), (7, :usersID), (8, :usersID)",
@@ -119,6 +121,11 @@ def login():
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
 
+        # Record the login time
+        now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
+        db.execute(
+            "UPDATE users SET lastLogin = :lastLogin WHERE id = :usersID", lastLogin=now, usersID=session["user_id"])
+
         # Redirect user to home page
         return redirect("/")
 
@@ -160,7 +167,7 @@ def index():
         date = datetime.today().strftime('%Y-%m-%d')
 
         # Get the users income
-        income = tendie_dashboard.getIncome(session["user_id"])
+        income = tendie_account.getIncome(session["user_id"])
 
         # Get current years total expenses for the user
         expenses_year = tendie_dashboard.getTotalSpend_Year(session["user_id"])
@@ -287,7 +294,7 @@ def history():
             deleted = tendie_expenses.deleteExpense(
                 oldExpense, session["user_id"])
             if not deleted:
-                return apology("The expense was unable to be deleted.")
+                return apology("The expense was unable to be deleted")
 
             # Get the users expense history, spend categories, and then render the history page w/ delete alert
             history = tendie_expenses.getHistory(session["user_id"])
@@ -301,7 +308,7 @@ def history():
             expensed = tendie_expenses.updateExpense(
                 oldExpense, request.form, session["user_id"])
             if not expensed:
-                return apology("The expense was unable to be updated.")
+                return apology("The expense was unable to be updated")
 
             # Redirect to results page and render a summary of the updated expense
             return render_template("expensed.html", results=expensed)
@@ -315,7 +322,7 @@ def budgets():
     # User reached route via GET
     if request.method == "GET":
         # Get the users income
-        income = tendie_dashboard.getIncome(session["user_id"])
+        income = tendie_account.getIncome(session["user_id"])
 
         # Get the users current budgets
         budgets = tendie_budgets.getBudgets(session["user_id"])
@@ -337,7 +344,7 @@ def budgets():
         # Render the budgets page with a success message, otherwise throw an error/apology
         if deletedBudgetName:
             # Get the users income, current budgets, and sum their budgeted amount unless they don't have any budgets (same steps as a GET for this route)
-            income = tendie_dashboard.getIncome(session["user_id"])
+            income = tendie_account.getIncome(session["user_id"])
             budgets = tendie_budgets.getBudgets(session["user_id"])
             budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
 
@@ -353,6 +360,12 @@ def createbudget():
 
     # User reached route via POST
     if request.method == "POST":
+        # Make sure user has no more than 20 budgets (note: 20 is an arbitrary value)
+        if tendie_budgets.getBudgets(session["user_id"]) is not None:
+            budgetCount = len(tendie_budgets.getBudgets(session["user_id"]))
+            if budgetCount >= 20:
+                return apology("You've reached the max amount of budgets'")
+
         # Get all of the budget info provided from the HTML form
         formData = list(request.form.items())
 
@@ -371,11 +384,8 @@ def createbudget():
             else:
                 return render_template("budgetcreated.html", results=budget)
     else:
-        # TODO need to make sure user has at least 1 spend category otherwise no selects will appear for
-        # budgeting (need to design something here that works for every page e.g. addexpense). Initial idea is to not allow user to delete ALL categories, must have at least 1.
-
         # Get the users income
-        income = tendie_dashboard.getIncome(session["user_id"])
+        income = tendie_account.getIncome(session["user_id"])
 
         # Get the users current budgets
         budgets = tendie_budgets.getBudgets(session["user_id"])
@@ -422,12 +432,12 @@ def updatebudget(urlvar_budgetname):
         budgetID = tendie_budgets.getBudgetID(
             urlvar_budgetname, session["user_id"])
         if budgetID is None:
-            return apology("'" + urlvar_budgetname + "' budget does not exist.")
+            return apology("'" + urlvar_budgetname + "' budget does not exist")
         else:
             budget = tendie_budgets.getBudgetByID(budgetID, session["user_id"])
 
         # Get the users income
-        income = tendie_dashboard.getIncome(session["user_id"])
+        income = tendie_account.getIncome(session["user_id"])
 
         # Get the users total budgeted amount
         budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
@@ -472,6 +482,12 @@ def categories():
 
             # Get the new name provided by user
             newCategoryName = request.form.get("createName").strip()
+
+            # Make sure user has no more than 30 categories (note: 30 is an arbitrary value)
+            categoryCount = len(
+                tendie_categories.getSpendCategories(session["user_id"]))
+            if categoryCount >= 30:
+                return apology("You've reached the max amount of categories")
 
             # Check to see if the new name already exists in the database (None == does not exist)
             categoryID = tendie_categories.getCategoryID(newCategoryName)
@@ -561,6 +577,12 @@ def categories():
             # Category does not exists in the database, throw error
             if categoryID is None:
                 return apology("The category you're trying to delete doesn't exist")
+
+            # Make sure user has at least 1 category (do not allow 0 categories)
+            categoryCount = len(
+                tendie_categories.getSpendCategories(session["user_id"]))
+            if categoryCount <= 1:
+                return apology("You need to keep at least 1 spend category")
 
             # Delete the category
             tendie_categories.deleteCategory(categoryID, session["user_id"])

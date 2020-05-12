@@ -9,14 +9,6 @@ from flask_session import Session
 db = SQL("sqlite:///budget.db")
 
 
-# Get the users total income
-def getIncome(userID):
-    income = db.execute(
-        "SELECT income FROM users WHERE id = :usersID", usersID=userID)
-
-    return income[0]["income"]
-
-
 # Get and return the users total spend for the current calendar year
 def getTotalSpend_Year(userID):
     totalSpendYear = db.execute(
