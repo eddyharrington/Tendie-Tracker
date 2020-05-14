@@ -6,7 +6,7 @@
         <!--Data Tables Plugins (export buttons)-->
         <link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" rel="stylesheet">
         <!--Responsive Expense Tables-->
-        <link href="/static/expenses.css" rel="stylesheet">
+        <link href="/static/css/expenses.css" rel="stylesheet">
 {% endblock %}
 
 {% block scripts %}
@@ -68,103 +68,14 @@
     <p>You don't have any expenses yet 😥</p>
     {% endif %}
 
-
+    {% if monthlySpending %}
+    <script src="/static/js/reports.js"></script>
     <script>
-        //Data Table
-        $(document).ready(function() {
-            $('#monthlyExpenses').DataTable( {
-                "pagingType": "full_numbers",
-                "order": [[ 3, "asc" ]],
-                "scrollY":        "300px",
-                "scrollCollapse": true,
-                "paging":         false,
-                dom: 'Bfrtip',
-                buttons: [
-                    'copy', 'csv', 'excel'
-                ]
-            } );
-        } );
-
-        {% if monthlySpending["chart"] %}
-        // Begin Monthly Chart
-        var ctx = document.getElementById('monthlyChart').getContext('2d');
-        var monthlyChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: [
-                    {% for record in monthlySpending["chart"] %}
-                    {% if loop.index != (monthlySpending["chart"] | length) %}
-                    '{{ record["name"] }}',
-                    {% else %}
-                    '{{ record["name"] }}'
-                    {% endif %}
-                    {% endfor %}
-                    ],
-                datasets: [{
-                    label: 'Total $ Spent',
-                    data: [
-                        {% for record in monthlySpending["chart"] %}
-                        {% if loop.index != (monthlySpending["chart"] | length) %}
-                        '{{ record["amount"] }}',
-                        {% else %}
-                        '{{ record["amount"] }}'
-                        {% endif %}
-                        {% endfor %}
-                        ],
-                    backgroundColor: [
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)',
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)'
-                    ],
-                    borderColor: [
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)',
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)',
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)',
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)',
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)',
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                legend: { display: false },
-                title: {
-                  display: true,
-                  text: 'Total spending per month during the current the year'
-                },
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    yAxes: [{
-                        ticks: {
-                            beginAtZero: true
-                        }
-                    }]
-                }
-            }
-        });
-        // End Monthly Chart
-        {% endif %}
-
+        var monthlyData = JSON.stringify({{ monthlySpending | tojson }});
+        loadMonthlySpendingData(monthlyData);
     </script>
+    {% endif %}
+
 
 {% endblock %}
 

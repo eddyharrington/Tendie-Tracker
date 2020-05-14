@@ -191,7 +191,7 @@ Home
                     {% set totalBudgetAmount = totalBudgetAmount[:-3] %}
                     <p>You've spent {{ percent | round | int }}% of your {{ totalBudgetAmount }} budget</p>
                     <div class="chart-container" style="position: relative; height:17vh">
-                        <canvas id="budgetChart.{{ loop.index }}"></canvas>
+                        <canvas id="budgetChart.{{ loop.index - 1 }}"></canvas>
                     </div>
                 </div>
             </div>
@@ -278,230 +278,34 @@ Home
 </div>
 
 
-<script>
-
-// As the modal becomes hidden (CSS transitions are 100% finished), clear the fields from the modal
-$('#quickExpenseModal').on('hidden.bs.modal', function () {
-    $('#description').val('')
-    $('#category').val('')
-    $('#date').val('{{ date }}')
-    $('#payer').val('')
-    $('#amount').val('')
-})
-
-// Data Tables
-$(document).ready(function() {
-    $('#expenses').DataTable( {
-        "pagingType": "full_numbers"
-    } );
-} );
+<script src="/static/js/dashboard.js"></script>
 
 {% if budgets %}
-// Begin Budget Charts
-{% for budget in budgets %}
-var ctx_{{ loop.index }} = document.getElementById('budgetChart.{{ loop.index }}').getContext('2d');
-var budgetChart_{{ loop.index }} = new Chart(ctx_{{ loop.index }}, {
-    type: 'doughnut',
-    data: {
-        labels: ['Spent', 'Remaining'],
-        datasets: [{
-            label: '{{ budget["name"] }}',
-            data: [{{ budget["spent"] }}, {{ budget["remaining"] }}],
-            backgroundColor: [
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)'
-            ],
-            borderColor: [
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)'
-            ],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        legend: {
-            labels: {
-                fontColor: 'black'
-            }
-        }
-    }
-});
-{% endfor %}
-// End Budget Charts
+<script>
+    var budgetData = JSON.stringify({{ budgets | tojson }});
+    loadBudgetData(budgetData);
+</script>
 {% endif %}
-
 
 {% if spending_week %}
-// Begin Weekly Chart
-var ctx = document.getElementById('weeklyChart').getContext('2d');
-var weeklyChart = new Chart(ctx, {
-    type: 'line',
-    data: {
-        labels: [ '{{ spending_week[0]["startOfWeek"][5:] }} - {{ spending_week[0]["endOfWeek"][5:] }}', '{{ spending_week[1]["startOfWeek"][5:] }} - {{ spending_week[1]["endOfWeek"][5:] }}', '{{ spending_week[2]["startOfWeek"][5:] }} - {{ spending_week[2]["endOfWeek"][5:] }}', '{{ spending_week[3]["startOfWeek"][5:] }} - {{ spending_week[3]["endOfWeek"][5:] }}'],
-        datasets: [{
-            label: 'Total $ Spent',
-            data: [{{ spending_week[0]["amount"] }}, {{ spending_week[1]["amount"] }}, {{ spending_week[2]["amount"] }}, {{ spending_week[3]["amount"] }}],
-            pointRadius: 9,
-            fill: false,
-            lineTension: 0.1,
-            borderWidth: 2,
-            backgroundColor: "rgba(240, 173, 78, 1)",
-            borderColor: "rgba(2, 184, 117, 1)"
-        }]
-    },
-    options: {
-        legend: { display: false },
-        title: {
-            display: true,
-            text: 'Total spending per week of the last 4 weeks'
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
-                }
-            }]
-        }
-    }
-});
-// End Weekly Chart
+<script>
+    var weeklyData = JSON.stringify({{ spending_week | tojson }});
+    loadWeeklySpendingData(weeklyData);
+</script>
 {% endif %}
-
 
 {% if spending_month %}
-// Begin Monthly Chart
-var ctx = document.getElementById('monthlyChart').getContext('2d');
-var monthlyChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-        labels: [
-            {% for record in spending_month %}
-            {% if loop.index != (spending_month | length) %}
-            '{{ record["name"] }}',
-            {% else %}
-            '{{ record["name"] }}'
-            {% endif %}
-            {% endfor %}
-            ],
-        datasets: [{
-            label: 'Total $ Spent',
-            data: [
-                {% for record in spending_month %}
-                {% if loop.index != (spending_month | length) %}
-                '{{ record["amount"] }}',
-                {% else %}
-                '{{ record["amount"] }}'
-                {% endif %}
-                {% endfor %}
-                ],
-            backgroundColor: [
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)',
-                'rgba(240, 173, 78, 1)',
-                'rgba(2, 184, 117, 1)'
-            ],
-            borderColor: [
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)',
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)',
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)',
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)',
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)',
-                'rgba(192, 138, 62, 1)',
-                'rgba(1, 147, 93, 1)'
-            ],
-            borderWidth: 2
-        }]
-    },
-    options: {
-        legend: { display: false },
-        title: {
-            display: true,
-            text: 'Total spending per month during the current the year'
-        },
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {
-            yAxes: [{
-                ticks: {
-                    beginAtZero: true
-                }
-            }]
-        }
-    }
-});
-// End Monthly Chart
+<script>
+    var monthlyData = JSON.stringify({{ spending_month | tojson }});
+    loadMonthlySpendingData(monthlyData);
+</script>
 {% endif %}
 
-// Begin Spending Trends Chart
-var ctx = document.getElementById('spendingChart').getContext('2d');
-var test = new Chart(ctx, {
-    type: 'bubble',
-    data: {
-        labels: "Spend Categories",
-        datasets: [
-        {% for record in spending_trends %}
-        {
-            label: ["{{ record['name'] }}"],
-            backgroundColor: "rgba(240, 173, 78, 0.7)",
-            borderColor: "rgba(2, 184, 117, 1)",
-            borderWidth: 2,
-            data: [{
-                x: {{record['totalSpent']}},
-                y: {{record['totalCount']}},
-                r: {{record['proportionalAmount']}}
-            }]
-        {% if loop.index != (spending_trends | length) %}
-        },
-        {% else %}
-        }
-        {% endif %}
-        {% endfor %}
-        ]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        title: {
-        display: true,
-        text: 'Total spent, total # of expenses, and % of overall spent per spend category'
-        },
-        scales: {
-        yAxes: [{
-            scaleLabel: {
-            display: true,
-            labelString: "Total # of Expenses"
-            }
-        }],
-        xAxes: [{
-            scaleLabel: {
-            display: true,
-            labelString: "Total $ Spent"
-            }
-        }]
-        }
-    }
-});
-// End Spending Frequency Chart
-
+{% if spending_trends %}
+<script>
+    var trendsData = JSON.stringify({{spending_trends | tojson }});
+    loadTrendsData(trendsData);
 </script>
+{% endif %}
 
 {% endblock %}

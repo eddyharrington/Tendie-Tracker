@@ -12,7 +12,7 @@ import tendie_reports
 import tendie_account
 
 from cs50 import SQL
-from flask import Flask, flash, jsonify, redirect, render_template, request, session
+from flask import Flask, jsonify, redirect, render_template, request, session
 from flask_session import Session
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
@@ -251,9 +251,9 @@ def addexpenses():
         return render_template("addexpenses.html", categories=categories, date=date)
 
 
-@app.route("/history", methods=["GET", "POST"])
+@app.route("/expensehistory", methods=["GET", "POST"])
 @login_required
-def history():
+def expensehistory():
     """Show history of expenses or let the user update existing expense"""
 
     # User reached route via GET
@@ -264,7 +264,7 @@ def history():
         # Get the users spend categories
         categories = tendie_categories.getSpendCategories(session["user_id"])
 
-        return render_template("history.html", history=history, categories=categories, isDeleteAlert=False)
+        return render_template("expensehistory.html", history=history, categories=categories, isDeleteAlert=False)
 
     # User reached route via POST
     else:
@@ -300,7 +300,7 @@ def history():
             history = tendie_expenses.getHistory(session["user_id"])
             categories = tendie_categories.getSpendCategories(
                 session["user_id"])
-            return render_template("history.html", history=history, categories=categories, isDeleteAlert=True)
+            return render_template("expensehistory.html", history=history, categories=categories, isDeleteAlert=True)
 
         # Update the existing expense record
         else:

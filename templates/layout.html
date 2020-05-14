@@ -9,9 +9,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
     <!-- Styles. Bootstrap theme from https://bootswatch.com/litera/ -->
-    <link href="/static/bootstrap.min.css" rel="stylesheet">
-    <link href="/static/favicon.ico" rel="icon">
-    <link href="/static/styles.css" rel="stylesheet">
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/static/css/favicon.ico" rel="icon">
+    <link href="/static/css/styles.css" rel="stylesheet">
     {% block styles %}{% endblock %}
 
     <!-- Scripts -->
@@ -70,14 +70,6 @@
             {% endif %}
         </div>
     </nav>
-
-    {% if get_flashed_messages() %}
-    <header>
-        <div class="alert alert-primary border text-center" role="alert">
-            {{ get_flashed_messages() | join(" ") }}
-        </div>
-    </header>
-    {% endif %}
 
     <main class="container p-5 text-center">
         {% block main %}{% endblock %}

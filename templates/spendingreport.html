@@ -41,13 +41,8 @@
     </div>
     <p><small class="text-muted">Chart note: does not include categories that represent less than 1% of overall spending</small></p>
     <br>
-    {% else %}
-    <p><small class="text-muted">Chart will not display until you record at least 1 expense.</small></p>
-    {% endif %}
-
-
+    
     <h3>Total Paid Per Month By Category</h3>
-    {% if spending_trends_table %}
     <div class="table-responsive">
         <table id="monthlyCategoryExpenses">
             <thead>
@@ -85,85 +80,22 @@
             </tfoot>
         </table>
     </div>
+
     {% else %}
-    <p><small class="text-muted">Table will not display until you record at least 1 expense.</small></p>
+    <p>You don't have any expenses yet 😥</p>
     {% endif %}
 
 
 
     <!--Then add another table that shows # of expenses per category / month using the "count" key-->
-
-
+    {% if spending_trends_chart or spending_trends_table %}
+    <script src="/static/js/reports.js"></script>
     <script>
-        {% if spending_trends_table %}
-        // Data Table
-        $(document).ready(function() {
-            $('#monthlyCategoryExpenses').DataTable( {
-                "pagingType": "full_numbers",
-                "bSort": false,
-                "bFilter": false,
-                "bInfo": false,
-                "paging": false,
-                dom: 'Bfrtip',
-                buttons: ['copy', 'csv', 'excel','colvis']
-            } );
-        } );
-        {% endif %}
-
-        {% if spending_trends_chart %}
-        // Begin Spending Trends Chart
-        var ctx = document.getElementById('spendingChart').getContext('2d');
-        var test = new Chart(ctx, {
-            type: 'bubble',
-            data: {
-              labels: "Spend Categories",
-              datasets: [
-                {% for record in spending_trends_chart %}
-                {
-                    label: ["{{ record['name'] }}"],
-                    backgroundColor: "rgba(240, 173, 78, 0.7)",
-                    borderColor: "rgba(2, 184, 117, 1)",
-                    borderWidth: 2,
-                    data: [{
-                        x: {{record['totalSpent']}},
-                        y: {{record['totalCount']}},
-                        r: {{record['proportionalAmount']}}
-                    }]
-                {% if loop.index != (spending_trends_chart | length) %}
-                },
-                {% else %}
-                }
-                {% endif %}
-                {% endfor %}
-              ]
-            },
-            options: {
-              responsive: true,
-              maintainAspectRatio: false,
-              title: {
-                display: true,
-                text: 'Total spent, total # of expenses, % of overall spent'
-              },
-              scales: {
-                yAxes: [{
-                  scaleLabel: {
-                    display: true,
-                    labelString: "Total # of Expenses"
-                  }
-                }],
-                xAxes: [{
-                  scaleLabel: {
-                    display: true,
-                    labelString: "Total $ Spent"
-                  }
-                }]
-              }
-            }
-        });
-        // End Spending Frequency Chart
-        {% endif %}
-
+        var trendsData_chart = JSON.stringify({{spending_trends_chart | tojson }});
+        var trendsData_table = JSON.stringify({{spending_trends_table | tojson }});
+        loadTrendsData(trendsData_chart, trendsData_table);
     </script>
+    {% endif %}
 
 {% endblock %}
 

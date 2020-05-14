@@ -6,7 +6,7 @@
         <!--Data Tables Plugins (export buttons)-->
         <link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" rel="stylesheet">
         <!--Responsive Expense Tables-->
-        <link href="/static/expenses.css" rel="stylesheet">
+        <link href="/static/css/expenses.css" rel="stylesheet">
 {% endblock %}
 
 {% block scripts %}
@@ -44,7 +44,7 @@
                 {% set totalBudgetAmount = totalBudgetAmount[:-3] %}
                 <p>You've spent {{ percent | round | int }}% of your {{ totalBudgetAmount }} budget</p>
                 <div class="chart-container" style="position: relative; height:23vh">
-                    <canvas id="budgetChart.{{ loop.index }}"></canvas>
+                    <canvas id="budgetChart.{{ loop.index - 1 }}"></canvas>
                 </div>
               </div>
             </div>
@@ -84,71 +84,17 @@
     </div>
     </div>
     {% endfor %}
+
+    <script src="/static/js/reports.js"></script>
+    <script>
+        var budgetData = JSON.stringify({{ budgets | tojson }});
+        loadBudgetData(budgetData);
+    </script>
+
     {% else %}
     <div class="col">
         <p>You have not created any budgets yet 😢</p>
     </div>
-    <!-- End Your Budgets -->
     {% endif %}
-
-
-    <script>
-        //Data Table
-        {% if budgets %}
-        {% for budgets in budgets %}
-        $(document).ready(function() {
-            $('#budgetTable_{{loop.index}}').DataTable( {
-                "order": [[ 5, "desc" ]],
-                "scrollY":        "300px",
-                "scrollCollapse": true,
-                "paging":         false,
-                dom: 'Bfrtip',
-                buttons: [
-                    'copy', 'csv', 'excel'
-                ],
-                "searching": false
-            } );
-        } );
-        {% endfor %}
-        {% endif %}
-
-        {% if budgets %}
-        // Begin Budget Charts
-        {% for budget in budgets %}
-        var ctx_{{ loop.index }} = document.getElementById('budgetChart.{{ loop.index }}').getContext('2d');
-        var budgetChart_{{ loop.index }} = new Chart(ctx_{{ loop.index }}, {
-            type: 'doughnut',
-            data: {
-                labels: ['Spent', 'Remaining'],
-                datasets: [{
-                    label: '{{ budget["name"] }}',
-                    data: [{{ budget["spent"] }}, {{ budget["remaining"] }}],
-                    backgroundColor: [
-                        'rgba(240, 173, 78, 1)',
-                        'rgba(2, 184, 117, 1)'
-                    ],
-                    borderColor: [
-                        'rgba(192, 138, 62, 1)',
-                        'rgba(1, 147, 93, 1)'
-                    ],
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                legend: {
-                    labels: {
-                        fontColor: 'black'
-                    }
-                }
-            }
-        });
-        {% endfor %}
-        // End Budget Charts
-        {% endif %}
-
-    </script>
-
 {% endblock %}
 
