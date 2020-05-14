@@ -39,7 +39,7 @@ def updateIncome(income, userID):
 # Get the users payers
 def getPayers(userID):
     payers = db.execute(
-        "SELECT payer FROM payers WHERE user_id = :usersID", usersID=userID)
+        "SELECT name FROM payers WHERE user_id = :usersID", usersID=userID)
 
     return payers
 
@@ -51,7 +51,7 @@ def addPayer(name, userID):
         return {"apology": "You already have a payer with that name. Enter a new, unique name."}
     else:
         # Insert new payer into DB
-        db.execute("INSERT INTO payers (user_id, payer) VALUES (:usersID, :name)",
+        db.execute("INSERT INTO payers (user_id, name) VALUES (:usersID, :name)",
                    usersID=userID, name=name)
         # TODO lazy fix to make the return type consistent with rename/delete payer and updateincome.
         # These functions return the # of rows updated/deleted (always being 1) whereas this one is using INSERT and returns the PK value. For now just return the value of 1 as a workaround.
@@ -74,7 +74,7 @@ def renamePayer(existingName, newName, userID):
 
     # Update the existing *payer* record with the new payers name
     rows = db.execute(
-        "UPDATE payers SET payer = :name WHERE user_id = :usersID AND payer = :oldName", name=newName, usersID=userID, oldName=existingName)
+        "UPDATE payers SET name = :name WHERE user_id = :usersID AND name = :oldName", name=newName, usersID=userID, oldName=existingName)
 
     # Return an error message if the record could not be updated
     if rows != 1:
@@ -90,7 +90,7 @@ def deletePayer(name, userID):
         return {"apology": "The payer you're trying to delete does not exist."}
 
     # Delete the record
-    rows = db.execute("DELETE FROM payers WHERE payer = :name AND user_id = :usersID",
+    rows = db.execute("DELETE FROM payers WHERE name = :name AND user_id = :usersID",
                       name=name, usersID=userID)
 
     # Return an error message if the record could not be deleted
@@ -125,7 +125,7 @@ def updatePassword(oldPass, newPass, userID):
 # Check to see if the payer name passed in exists in the DB or not
 def payerExistsForUser(payerName, userID):
     count = db.execute(
-        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID AND payer = :name", usersID=userID, name=payerName)
+        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID AND name = :name", usersID=userID, name=payerName)
 
     if count[0]["count"] > 0:
         return True
