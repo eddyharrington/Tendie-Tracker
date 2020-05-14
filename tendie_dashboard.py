@@ -51,21 +51,20 @@ def getLastFiveExpenses(userID):
 # Get and return all budgets for the user
 def getBudgets(userID):
     budgets = []
-    budget = {"id": None, "name": None,
-              "amount": 0, "spent": 0, "remaining": 0}
+    budget = {"name": None, "amount": 0, "spent": 0, "remaining": 0}
 
     budgets_query = tendie_budgets.getBudgets(userID)
     # Build a budget dict to return
     if budgets_query:
         for record in budgets_query:
-            budget["id"] = record["id"]
+            budgetID = record["id"]
             budget["name"] = record["name"]
             budget["amount"] = record["amount"]
 
             # Query the DB for the budgets total spent amount (calculated as the sum of expenses with categories that match the categories selected for the individual budget)
             budget_TotalSpent = db.execute(
                 "SELECT SUM(amount) AS 'spent' FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-                usersID=userID, budgetID=budget["id"])
+                usersID=userID, budgetID=budgetID)
             if (budget_TotalSpent[0]["spent"] == None):
                 budget["spent"] = 0
             else:

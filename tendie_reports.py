@@ -3,6 +3,7 @@ import copy
 import tendie_expenses
 import tendie_dashboard
 import tendie_categories
+import tendie_budgets
 
 from cs50 import SQL
 from flask import request, session
@@ -24,8 +25,9 @@ def generateBudgetsReport(userID):
     # Loop through the budgets and add a new key/value pair to hold expense details per budget
     if budgetsReport:
         for record in budgetsReport:
+            budgetID = tendie_budgets.getBudgetID(record["name"], userID)
             expenseDetails = db.execute("SELECT expenses.description, expenses.category, expenses.expenseDate, expenses.payer, expenses.amount FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-                                        usersID=userID, budgetID=record["id"])
+                                        usersID=userID, budgetID=budgetID)
             record["expenses"] = expenseDetails
 
     return budgetsReport
