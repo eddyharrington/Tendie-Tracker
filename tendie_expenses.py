@@ -27,6 +27,8 @@ def addExpenses(formData, userID):
 
         # Add dictionary to list (to comply with design/standard of expensed.html)
         expenses.append(expense)
+
+    # User is submitting via 'addexpenses' route
     else:
         counter = 0
         for key, value in formData:

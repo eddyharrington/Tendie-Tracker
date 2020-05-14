@@ -163,6 +163,9 @@ def index():
         # Get the users spend categories (for quick expense modal)
         categories = tendie_categories.getSpendCategories(session["user_id"])
 
+        # Get the users payers (for quick expense modal)
+        payers = tendie_account.getPayers(session["user_id"])
+
         # Get todays date (for quick expense modal)
         date = datetime.today().strftime('%Y-%m-%d')
 
@@ -202,7 +205,7 @@ def index():
         spending_trends = tendie_dashboard.getSpendingTrends(
             session["user_id"])
 
-        return render_template("index.html", categories=categories, date=date, income=income, expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
+        return render_template("index.html", categories=categories, payers=payers, date=date, income=income, expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
                                budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends)
 
     # User reached route via POST
@@ -246,9 +249,13 @@ def addexpenses():
         # Get the users spend categories
         categories = tendie_categories.getSpendCategories(session["user_id"])
 
+        # Get the users payers
+        payers = tendie_account.getPayers(session["user_id"])
+
         # Render expense page
         date = datetime.today().strftime('%Y-%m-%d')
-        return render_template("addexpenses.html", categories=categories, date=date)
+
+        return render_template("addexpenses.html", categories=categories, date=date, payers=payers)
 
 
 @app.route("/expensehistory", methods=["GET", "POST"])
@@ -264,7 +271,10 @@ def expensehistory():
         # Get the users spend categories
         categories = tendie_categories.getSpendCategories(session["user_id"])
 
-        return render_template("expensehistory.html", history=history, categories=categories, isDeleteAlert=False)
+        # Get the users payers (for modal)
+        payers = tendie_account.getPayers(session["user_id"])
+
+        return render_template("expensehistory.html", history=history, categories=categories, payers=payers, isDeleteAlert=False)
 
     # User reached route via POST
     else:
@@ -296,11 +306,12 @@ def expensehistory():
             if not deleted:
                 return apology("The expense was unable to be deleted")
 
-            # Get the users expense history, spend categories, and then render the history page w/ delete alert
+            # Get the users expense history, spend categories, payers, and then render the history page w/ delete alert
             history = tendie_expenses.getHistory(session["user_id"])
             categories = tendie_categories.getSpendCategories(
                 session["user_id"])
-            return render_template("expensehistory.html", history=history, categories=categories, isDeleteAlert=True)
+            payers = tendie_account.getPayers(session["user_id"])
+            return render_template("expensehistory.html", history=history, categories=categories, payers=payers, isDeleteAlert=True)
 
         # Update the existing expense record
         else:

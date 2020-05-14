@@ -47,8 +47,12 @@ Home
                     </div>
                     <div class="form-group">
                         <label for="payer" class="col-form-label">Payer:</label>
-                        <input type="text" class="form-control-sm" name="payer" id="payer" value="" maxlength="35"
-                            size="10" placeholder="Self" form="quickExpense" required>
+                        <select id="payer" class="form-control-sm" name="payer" form="quickExpense" required>
+                            <option value="Self">Self</option>
+                            {% for payer in payers %}
+                            <option value="{{ payer['name'] }}">{{ payer['name'] }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="amount" class="col-form-label">Amount:</label>

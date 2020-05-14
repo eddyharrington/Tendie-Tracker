@@ -39,13 +39,18 @@ def updateIncome(income, userID):
 # Get the users payers
 def getPayers(userID):
     payers = db.execute(
-        "SELECT name FROM payers WHERE user_id = :usersID", usersID=userID)
+        "SELECT name FROM payers WHERE user_id = :usersID ORDER BY name ASC", usersID=userID)
 
     return payers
 
 
 # Add a payer to the users account
 def addPayer(name, userID):
+
+    # Make sure the user has no more than 5 payers (note: this max amount is arbitrary, 5 sounded good ¯\_(ツ)_/¯)
+    if getTotalPayers(userID) >= 5:
+        return {"apology": "You have the maximum number of payers. Try deleting one you aren't using or contact the admin."}
+
     # Make sure the new payer does not already exist in the DB
     if payerExistsForUser(name, userID):
         return {"apology": "You already have a payer with that name. Enter a new, unique name."}
@@ -124,8 +129,13 @@ def updatePassword(oldPass, newPass, userID):
 
 # Check to see if the payer name passed in exists in the DB or not
 def payerExistsForUser(payerName, userID):
+    # 'Self' always returns true / exists because it's the default payer name used for the user
+    if payerName.lower() == 'self':
+        return True
+
+    # Query the DB
     count = db.execute(
-        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID AND name = :name", usersID=userID, name=payerName)
+        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID AND LOWER(name) = :name", usersID=userID, name=payerName.lower())
 
     if count[0]["count"] > 0:
         return True
@@ -162,11 +172,18 @@ def getStatistics(userID):
     stats["totalCategories"] = totalCategories[0]["count"]
 
     # Get total payers
-    totalPayers = db.execute(
-        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID", usersID=userID)
-    stats["totalPayers"] = totalPayers[0]["count"]
+    totalPayers = getTotalPayers(userID)
+    stats["totalPayers"] = totalPayers
 
     return stats
+
+
+# Get a count of the total number of payers a user has
+def getTotalPayers(userID):
+    count = db.execute(
+        "SELECT COUNT(*) AS 'count' FROM payers WHERE user_id = :usersID", usersID=userID)
+
+    return count[0]["count"]
 
 
 # Get all of the users account info for their 'Your Account' page

@@ -44,7 +44,12 @@
                   <input type="date" class="form-control-sm" name="date.1" form='expenseForm' required value="{{ date }}">
               </td>
               <td>
-                  <input type="text" class="form-control-sm" name="payer.1" form='expenseForm' maxlength="35" size="10" placeholder="Self" required>
+                  <select class="form-control-sm" name="payer.1" form="expenseForm" required>
+                    <option value="Self">Self</option>
+                    {% for payer in payers %}
+                    <option value="{{ payer['name'] }}">{{ payer['name'] }}</option>
+                    {% endfor %}
+                  </select>
               </td>
               <td>
                   <!-- Modified RegEx from Gary @ StackOverflow: https://stackoverflow.com/a/16242575 -->
@@ -66,6 +71,8 @@
     <script>
       var categoryData = JSON.stringify({{ categories | tojson }});
       var dateData = "{{ date }}";
-      loadData(categoryData, dateData);
+      var payersData = JSON.stringify({{ payers | tojson }});
+
+      loadData(categoryData, dateData, payersData);
     </script>
 {% endblock %}
