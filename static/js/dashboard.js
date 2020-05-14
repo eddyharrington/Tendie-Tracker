@@ -24,16 +24,6 @@ function loadTrendsData(trendsData) {
     loadSpendingTrendsChart(spendingTrends);
 }
 
-
-// As the modal becomes hidden (CSS transitions are 100% finished), clear the fields from the modal
-$('#quickExpenseModal').on('hidden.bs.modal', function () {
-    $('#description').val('')
-    $('#category').val('')
-    $('#date').val('{{ date }}')
-    $('#payer').val('')
-    $('#amount').val('')
-})
-
 function loadBudgetCharts(budgets) {
     if (budgets == null) {
         return;
