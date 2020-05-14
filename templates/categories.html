@@ -34,7 +34,7 @@
             </p>
           </div>
           <div class="collapse" id="collapseCategory">
-              <form action="/categories" id="createCategory" method="post">
+              <form action="/categories" id="createCategory" method="post" autocomplete="off">
                 <div class="form-group">
                     <label class="col-form-label col-form-label-sm" for="name">Category Name</label>
                     <input class="form-control form-control-sm" type="text" name="createName" id="name" form='createCategory' placeholder="e.g. Loans" pattern="^([a-zA-Z0-9_\s\-]*)$" title="Please enter a name without special characters except underscores, spaces, and hyphens" maxlength="99" required>
@@ -85,7 +85,7 @@
             </button>
           </div>
           <div class="modal-body">
-            <form action="/categories" id="renameCategory" method="post">
+            <form action="/categories" id="renameCategory" method="post" autocomplete="off">
               <div class="form-group">
                 <label for="oldname" class="col-form-label">Old Name:</label>
                 <input type="text" class="form-control" name="oldname" id="oldname" value="" form="renameCategory" readonly>

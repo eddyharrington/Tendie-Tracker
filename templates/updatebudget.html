@@ -7,7 +7,7 @@
 {% block main %}
     <h1>Update Budget</h1>
     <br>
-    <form action="/updatebudget/{{ budget['name'] }}" id="updateBudgetForm" method="post">
+    <form action="/updatebudget/{{ budget['name'] }}" id="updateBudgetForm" method="post" autocomplete="off">
         <div class="form-group">
             <label for="name" class="formLabels">Budget Name</label>
             <input type="text" class="form-control" id="name" form='updateBudgetForm' name="name" placeholder="e.g. 2020 expenses" pattern="^([a-zA-Z0-9_\s\-]*)$" title="Please enter a name without special characters except underscores, spaces, and hyphens" maxlength="45" value="{{ budget['name'] }}" required autofocus>
