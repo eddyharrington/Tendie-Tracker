@@ -24,6 +24,11 @@ function loadTrendsData(trendsData) {
     loadSpendingTrendsChart(spendingTrends);
 }
 
+// After the modal is fully rendered, focus input into the new 'description' field
+$('#quickExpenseModal').on('shown.bs.modal', function () {
+    $('#description').trigger('focus')
+})
+
 function loadBudgetCharts(budgets) {
     if (budgets == null) {
         return;
