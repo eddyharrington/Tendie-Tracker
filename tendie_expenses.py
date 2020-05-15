@@ -1,3 +1,4 @@
+import config
 import calendar
 
 from cs50 import SQL
@@ -6,7 +7,8 @@ from flask_session import Session
 from datetime import datetime
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///budget.db")
+# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
+db = SQL(config.testingDB)
 
 
 # Add expense(s) to the users expense records

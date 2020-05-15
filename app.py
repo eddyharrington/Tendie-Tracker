@@ -46,7 +46,8 @@ Session(app)
 app.jinja_env.filters["usd"] = usd
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///budget.db")
+# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
+db = SQL(config.testingDB)
 
 
 @app.route("/register", methods=["GET", "POST"])

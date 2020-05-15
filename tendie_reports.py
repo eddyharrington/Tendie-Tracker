@@ -1,3 +1,4 @@
+import config
 import calendar
 import copy
 import tendie_expenses
@@ -10,7 +11,8 @@ from flask import request, session
 from flask_session import Session
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///budget.db")
+# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
+db = SQL(config.testingDB)
 
 
 # Generates data needed for the budget report by looping through each budget and adding expense history where categories match between budgets and expenses

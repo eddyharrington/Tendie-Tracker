@@ -1,3 +1,5 @@
+import config
+
 from cs50 import SQL
 from flask import request, session
 from flask_session import Session
@@ -5,7 +7,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 
 # Configure CS50 Library to use SQLite database
-db = SQL("sqlite:///budget.db")
+# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
+db = SQL(config.testingDB)
 
 
 # Get the users account name
