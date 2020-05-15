@@ -257,4 +257,4 @@ dmypy.json
 
 # Tendie Tracker configs
 config.py
-budget.db
+budget-test.db
