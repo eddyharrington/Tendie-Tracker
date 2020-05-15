@@ -47,7 +47,8 @@ def getPayers(userID):
 # Add a payer to the users account
 def addPayer(name, userID):
 
-    # Make sure the user has no more than 5 payers (note: this max amount is arbitrary, 5 sounded good ¯\_(ツ)_/¯)
+    # Make sure the user has no more than 5 payers (6 w/ default 'Self') (note: this max amount is arbitrary, 5 sounded good ¯\_(ツ)_/¯.
+    # Also note that the payers report charts have 5 hardcoded color pallettes that will need to be updated if the max number of payers is changed in the future)
     if getTotalPayers(userID) >= 5:
         return {"apology": "You have the maximum number of payers. Try deleting one you aren't using or contact the admin."}
 

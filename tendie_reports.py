@@ -33,7 +33,7 @@ def generateBudgetsReport(userID):
     return budgetsReport
 
 
-# Generates data needed for the monthly spending report by gathering monthly data need
+# Generates data needed for the monthly spending report
 def generateMonthlyReport(userID):
 
     # Create data structure to hold users monthly spending data for the chart (monthly summed data)
@@ -128,3 +128,31 @@ def generateSpendingTrendsReport(userID):
                             "table": spending_trends_table, "categories": categories}
 
     return spendingTrendsReport
+
+
+# Generates data needed for the payers spending report
+def generatePayersReport(userID):
+
+    # First get all of the payers from expenses table (this may include payers that don't exist anymore for the user (i.e. deleted the payer and didn't update expense records))
+    payers = db.execute(
+        "SELECT payer AS 'name', SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID GROUP BY payer ORDER BY amount DESC", usersID=userID)
+
+    # Now get any payers the user has in their account but haven't expensed anything
+    nonExpensePayers = db.execute(
+        "SELECT name FROM payers WHERE user_id = :usersID AND name NOT IN (SELECT payer FROM expenses WHERE expenses.user_id = :usersID)", usersID=userID)
+
+    # Add the non-expense payers to the payers data structure and set their amounts to 0
+    for payer in nonExpensePayers:
+        newPayer = {"name": payer["name"], "amount": 0}
+        payers.append(newPayer)
+
+    # Calculate the total paid for all payers combined
+    totalPaid = 0
+    for payer in payers:
+        totalPaid = totalPaid + payer["amount"]
+
+    # Calculate the % paid per payer and add to the data structure
+    for payer in payers:
+        payer["percentAmount"] = round((payer["amount"] / totalPaid) * 100)
+
+    return payers

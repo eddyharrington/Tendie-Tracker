@@ -152,6 +152,8 @@ def index():
 
     # User reached route via GET
     if request.method == "GET":
+        # TODO reduce or completely remove the redundant use of javascript code in dashboard.js and reports.js
+
         # Initialize metrics to None to render the appropriate UX if data does not exist yet for the user
         expenses_year = None
         expenses_month = None
@@ -198,15 +200,15 @@ def index():
         spending_month = tendie_dashboard.getMonthlySpending(
             session["user_id"])
 
-        # TODO consider passing additional vars to the template that has strings formatted for the charts. E.g. javascript needs months/data in an array,
-        # but due to jinja looping it makes the HTML doc render really messy with a lot of spaces. Might be better to just pass a single string for those charts.
-
         # Get spending trends for the user
         spending_trends = tendie_dashboard.getSpendingTrends(
             session["user_id"])
 
+        # Get payer spending for the user
+        payersChart = tendie_reports.generatePayersReport(session["user_id"])
+
         return render_template("index.html", categories=categories, payers=payers, date=date, income=income, expenses_year=expenses_year, expenses_month=expenses_month, expenses_week=expenses_week, expenses_last5=expenses_last5,
-                               budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends)
+                               budgets=budgets, spending_week=spending_week, spending_month=spending_month, spending_trends=spending_trends, payersChart=payersChart)
 
     # User reached route via POST
     else:
@@ -790,6 +792,17 @@ def updateaccount():
         user = tendie_account.getAllUserInfo(session["user_id"])
 
         return render_template("account.html", username=user["name"], income=user["income"], payers=user["payers"], stats=user["stats"], newIncome=None, addPayer=None, renamedPayer=None, deletedPayer=None, updatedPassword=None)
+
+
+@app.route("/payersreport", methods=["GET"])
+@login_required
+def payersreport():
+    """View payers spending report"""
+
+    # Generate a data structure that combines the users payers and expense data for chart and table
+    payersReport = tendie_reports.generatePayersReport(session["user_id"])
+
+    return render_template("payersreport.html", payers=payersReport)
 
 
 # Handle errors by rendering apology

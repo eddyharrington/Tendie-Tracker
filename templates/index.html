@@ -143,6 +143,7 @@ Home
     <div class="row">
         <div class="col-12">
             <h4 style="text-align:left">Last 5 Expenses</h4>
+            <p class="small" style="text-align:left"><a href="/expensehistory">(view all expense history)</a></p>
             {% if expenses_last5 != None %}
             <div class="table-responsive">
                 <table class="table table-hover table-striped table-sm">
@@ -180,6 +181,7 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Your Budgets</h2>
+            <p class="small" style="text-align:left"><a href="/budgets">(view all budgets)</a></p>
         </div>
     </div>
     <div class="row">
@@ -237,6 +239,7 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Monthly Spending</h2>
+            <p class="small" style="text-align:left"><a href="/monthlyreport">(view full monthly report)</a></p>
         </div>
     </div>
     <div class="row">
@@ -260,6 +263,7 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Spending Habits</h2>
+            <p class="small" style="text-align:left"><a href="/spendingreport">(view full spending report)</a></p>
         </div>
     </div>
     <div class="row">
@@ -279,6 +283,31 @@ Home
         {% endif %}
     </div>
     <!-- End Spending Habits Chart -->
+
+    <!-- Begin Payers Chart -->
+    <br>
+    <div class="row">
+        <div class="col-12">
+            <h2 style="text-align:left">Payer Spending</h2>
+            <p class="small" style="text-align:left"><a href="/payersreport">(view full payers report)</a></p>
+        </div>
+    </div>
+    <div class="row">
+        {% if payersChart %}
+        <div class="col-12">
+        <div class="chart-container" style="position: relative; height:40vh">
+            <canvas id="payersChart" width="400" height="400"></canvas>
+        </div>
+        <p><small class="text-muted">Chart note: does not include payers that represent less than 1% of overall spending</small></p>
+        </div>
+        {% else %}
+        <div class="col">
+            <p style="text-align:left"><small class="text-muted">Chart will not display until you record at least 1
+                    expense.</small></p>
+        </div>
+        {% endif %}
+    </div>
+    <!-- End payers Chart -->
 </div>
 
 
@@ -309,6 +338,13 @@ Home
 <script>
     var trendsData = JSON.stringify({{spending_trends | tojson }});
     loadTrendsData(trendsData);
+</script>
+{% endif %}
+
+{% if payersChart %}
+<script>
+    var payersData = JSON.stringify({{ payersChart | tojson }});
+    loadPayersData(payersData);
 </script>
 {% endif %}
 

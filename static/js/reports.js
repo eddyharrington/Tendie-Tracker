@@ -22,6 +22,12 @@ function loadTrendsData(trendsData_chart, trendsData_table) {
     loadSpendingTrendsTable(spendingTrends_table);
 }
 
+// Loads *payers* data from Flask/Jinja that is passed from the request
+function loadPayersData(payersData) {
+    payersSpending = JSON.parse(payersData);
+    loadPayersSpendingChart(payersSpending);
+}
+
 function loadBudgetCharts(budgets) {
     if (budgets == null) {
         return;
@@ -254,5 +260,77 @@ function loadSpendingTrendsTable(spendingTrends_table) {
             dom: 'Bfrtip',
             buttons: ['copy', 'csv', 'excel', 'colvis']
         });
+    }
+}
+
+function loadPayersSpendingChart(payersSpending) {
+    if (payersSpending == null) {
+        return;
+    }
+    else {
+        // Loop through the payers object and build the labels
+        payerNames = []
+        for (i = 0; i < payersSpending.length; i++) {
+            // If the payer represents less than 1% of overall expenses do not include
+            if (payersSpending[i].percentAmount < 1) {
+                continue;
+            }
+            else {
+                payerNames.push(payersSpending[i].name)
+            }
+        }
+
+        // Loop through the payers object and build the amounts dataset
+        payerAmounts = []
+        for (i = 0; i < payersSpending.length; i++) {
+            // If the payer represents less than 1% of overall expenses do not include
+            if (payersSpending[i].percentAmount < 1) {
+                continue;
+            }
+            else {
+                payerAmounts.push(payersSpending[i].amount)
+            }
+        }
+
+        // Build the chart
+        chartElement = document.getElementById('payersChart').getContext('2d');
+        budgetCharts = new Chart(chartElement, {
+            type: 'pie',
+            data: {
+                labels: payerNames,
+                datasets: [{
+                    data: payerAmounts,
+                    // Note: the color scheme for this is hard-coded with an assumption of 6 total payers including the default 'Self' payer. 
+                    // If max payer count changes in the future, the background/border colors will need to as well
+                    backgroundColor: [
+                        'rgba(240, 173, 78, 1)',
+                        'rgba(2, 184, 117, 1)',
+                        'rgba(69, 130, 236)',
+                        'rgba(23, 162, 184)',
+                        'rgba(202, 207, 212)',
+                        'rgba(217, 83, 79)'
+                    ],
+                    borderColor: [
+                        'rgba(192, 138, 62, 1)',
+                        'rgba(1, 147, 93, 1)',
+                        'rgba(64, 121, 220)',
+                        'rgba(21, 151, 171)',
+                        'rgba(173, 181, 189)',
+                        'rgba(195, 74, 71)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                legend: {
+                    labels: {
+                        fontColor: 'black'
+                    }
+                }
+            }
+        });
+
     }
 }
