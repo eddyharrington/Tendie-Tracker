@@ -143,8 +143,8 @@ Home
     <div class="row">
         <div class="col-12">
             <h4 style="text-align:left">Last 5 Expenses</h4>
-            <p class="small" style="text-align:left"><a href="/expensehistory">(view all expense history)</a></p>
             {% if expenses_last5 != None %}
+            <p class="small" style="text-align:left"><a href="/expensehistory">(view all expense history)</a></p>
             <div class="table-responsive">
                 <table class="table table-hover table-striped table-sm">
                     <thead>
@@ -181,7 +181,9 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Your Budgets</h2>
+            {% if budgets %}
             <p class="small" style="text-align:left"><a href="/budgets">(view all budgets)</a></p>
+            {% endif %}
         </div>
     </div>
     <div class="row">
@@ -239,7 +241,9 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Monthly Spending</h2>
+            {% if spending_month %}
             <p class="small" style="text-align:left"><a href="/monthlyreport">(view full monthly report)</a></p>
+            {% endif %}
         </div>
     </div>
     <div class="row">
@@ -263,7 +267,9 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Spending Habits</h2>
+            {% if spending_trends %}
             <p class="small" style="text-align:left"><a href="/spendingreport">(view full spending report)</a></p>
+            {% endif %}
         </div>
     </div>
     <div class="row">
@@ -289,7 +295,9 @@ Home
     <div class="row">
         <div class="col-12">
             <h2 style="text-align:left">Payer Spending</h2>
+            {% if payersChart %}
             <p class="small" style="text-align:left"><a href="/payersreport">(view full payers report)</a></p>
+            {% endif %}
         </div>
     </div>
     <div class="row">
