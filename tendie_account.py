@@ -64,13 +64,11 @@ def addPayer(name, userID):
         return {"apology": "You already have a payer with that name. Enter a new, unique name."}
     else:
         # Insert new payer into DB
-        db.execute("INSERT INTO payers (user_id, name) VALUES (:usersID, :name)",
-                   {"usersID": userID, "name": name})
+        row = db.execute("INSERT INTO payers (user_id, name) VALUES (:usersID, :name)",
+                         {"usersID": userID, "name": name}).rowcount
         db.commit()
-        # TODO lazy fix to make the return type consistent with rename/delete payer and updateincome.
-        # These functions return the # of rows updated/deleted (always being 1) whereas this one is using INSERT and returns the PK value. For now just return the value of 1 as a workaround.
-        # TODO Fix: use 'db.execute('sql statement').rowcount' to get row number here
-        return 1
+
+        return row
 
 
 # Rename a users existing payer
