@@ -152,7 +152,7 @@ def getMonthlySpending(userID):
 
     # Query note: pulls data for months of the *current* calendar year
     results = db.execute(
-        "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date(expensedate) > date_trunc('month',(CURRENT_DATE - interval '11 months')) - interval '1 day' GROUP BY date_part('month', date(expensedate))",
+        "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date(expensedate) > date_trunc('month',(CURRENT_DATE - interval '11 months')) - interval '1 day' GROUP BY date_part('month', date(expensedate)) ORDER BY month",
         {"usersID": userID}).fetchall()
     spending_month_query = convertSQLToDict(results)
 
