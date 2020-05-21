@@ -13,6 +13,7 @@
     <h1>Payers Spending Report</h1>
     <br>
 
+    {% if payers %}
     <!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
     <div class="chart-container" style="position: relative; height:40vh">
         <canvas id="payersChart" width="400" height="400"></canvas>
@@ -54,6 +55,9 @@
         var payersData = JSON.stringify({{ payers | tojson }});
         loadPayersData(payersData);
     </script>
+    {% else %}
+    <p>You don't have any expenses yet 😥</p>
+    {% endif %}
 
 {% endblock %}
 
