@@ -50,7 +50,7 @@ def getTotalSpend_Week(userID):
 # Get and return the users last 5 expenses
 def getLastFiveExpenses(userID):
     results = db.execute(
-        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY submitTime DESC LIMIT 5", {"usersID": userID}).fetchall()
+        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY expenseDate DESC LIMIT 5", {"usersID": userID}).fetchall()
 
     lastFiveExpenses = convertSQLToDict(results)
 
