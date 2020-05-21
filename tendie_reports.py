@@ -162,7 +162,10 @@ def generatePayersReport(userID):
         totalPaid = totalPaid + payer["amount"]
 
     # Calculate the % paid per payer and add to the data structure
-    for payer in payers:
-        payer["percentAmount"] = round((payer["amount"] / totalPaid) * 100)
+    if totalPaid != 0:
+        for payer in payers:
+            payer["percentAmount"] = round((payer["amount"] / totalPaid) * 100)
 
-    return payers
+        return payers
+    else:
+        return None
