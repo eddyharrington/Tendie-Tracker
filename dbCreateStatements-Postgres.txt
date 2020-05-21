@@ -3,8 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
 	username	TEXT NOT NULL,
 	hash	TEXT NOT NULL,
 	income	REAL NOT NULL DEFAULT 60000.00,
-	registerDate	TEXT NOT NULL,
-	lastLogin	TEXT NOT NULL
+	registerdate	TEXT NOT NULL,
+	lastlogin	TEXT NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS budgets (
@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS expenses (
 	id	serial PRIMARY KEY,
 	description	TEXT NOT NULL,
 	category	TEXT NOT NULL,
-	expenseDate	TEXT NOT NULL,
+	expensedate	TEXT NOT NULL,
 	amount	REAL NOT NULL,
 	payer	TEXT NOT NULL,
-	submitTime	TEXT NOT NULL,
+	submittime	TEXT NOT NULL,
 	user_id	INTEGER,
 	CONSTRAINT budgets_user_id_fkey FOREIGN KEY (user_id)
 		REFERENCES users (id) MATCH SIMPLE
