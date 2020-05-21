@@ -68,7 +68,7 @@ CREATE TABLE IF NOT EXISTS expenses (
 );
 
 INSERT INTO categories(name) VALUES ('Groceries');
-INSERT INTO categories(name) VALUES ('Rent');
+INSERT INTO categories(name) VALUES ('Housing');
 INSERT INTO categories(name) VALUES ('Utilities');
 INSERT INTO categories(name) VALUES ('Dining Out');
 INSERT INTO categories(name) VALUES ('Shopping');
