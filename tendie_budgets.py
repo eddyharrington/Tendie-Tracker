@@ -1,21 +1,25 @@
-import config
+import os
 import re
 import tendie_categories
 
-from cs50 import SQL
 from flask import request, session
 from flask_session import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import datetime
+from helpers import convertSQLToDict
 
-# Configure CS50 Library to use SQLite database
-# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
-db = SQL(config.testingDB)
+# Create engine object to manage connections to DB, and scoped session to separate user interactions with DB
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
 
 
 # Get the users budgets
 def getBudgets(userID):
-    budgets = db.execute(
-        "SELECT id, name, amount FROM budgets WHERE user_id = :usersID ORDER BY name ASC", usersID=userID)
+    results = db.execute(
+        "SELECT id, name, amount FROM budgets WHERE user_id = :usersID ORDER BY name ASC", {"usersID": userID}).fetchall()
+
+    budgets = convertSQLToDict(results)
 
     if budgets:
         return budgets
@@ -25,8 +29,10 @@ def getBudgets(userID):
 
 # Get a users budget by the budget ID
 def getBudgetByID(budgetID, userID):
-    budget = db.execute(
-        "SELECT name, amount, id FROM budgets WHERE user_id = :usersID AND id = :budgetID", usersID=userID, budgetID=budgetID)
+    results = db.execute(
+        "SELECT name, amount, id FROM budgets WHERE user_id = :usersID AND id = :budgetID", {"usersID": userID, "budgetID": budgetID}).fetchall()
+
+    budget = convertSQLToDict(results)
 
     return budget[0]
 
@@ -34,12 +40,12 @@ def getBudgetByID(budgetID, userID):
 # Get total amount budgeted
 def getTotalBudgeted(userID):
     amount = db.execute(
-        "SELECT SUM(amount) AS 'amount' FROM budgets WHERE user_id = :usersID", usersID=userID)
+        "SELECT SUM(amount) AS amount FROM budgets WHERE user_id = :usersID", {"usersID": userID}).fetchone()[0]
 
-    if amount[0]["amount"] is None:
+    if amount is None:
         return 0
     else:
-        return amount[0]["amount"]
+        return amount
 
 
 # Generates a budget data structure from the users input when submitting a new or updated budget
@@ -102,8 +108,9 @@ def createBudget(budget, userID):
         return {"apology": "Please enter a unique budget name, not a duplicate."}
 
     # Insert new budget into DB
-    newBudgetID = db.execute("INSERT INTO budgets (name, amount, user_id) VALUES (:budgetName, :budgetAmount, :usersID)",
-                             budgetName=budget["name"], budgetAmount=budget["amount"], usersID=userID)
+    newBudgetID = db.execute("INSERT INTO budgets (name, amount, user_id) VALUES (:budgetName, :budgetAmount, :usersID) RETURNING id",
+                             {"budgetName": budget["name"], "budgetAmount": budget["amount"], "usersID": userID}).fetchone()[0]
+    db.commit()
 
     # Get category IDs from DB for the new budget
     categoryIDS = getBudgetCategoryIDS(budget["categories"], userID)
@@ -118,8 +125,9 @@ def createBudget(budget, userID):
 def addCategory(budgetID, categoryIDS):
     # Insert a record for each category in the new budget
     for categoryID in categoryIDS:
-        rows = db.execute("INSERT INTO budgetCategories (budgets_id, category_id, amount) VALUES (:budgetID, :categoryID, :percentAmount)",
-                          budgetID=budgetID, categoryID=categoryID["id"], percentAmount=categoryID["amount"])
+        db.execute("INSERT INTO budgetCategories (budgets_id, category_id, amount) VALUES (:budgetID, :categoryID, :percentAmount)",
+                   {"budgetID": budgetID, "categoryID": categoryID["id"], "percentAmount": categoryID["amount"]})
+    db.commit()
 
 
 # Update an existing budget
@@ -136,11 +144,13 @@ def updateBudget(oldBudgetName, budget, userID):
 
     # Update the budget name and amount in DB
     db.execute("UPDATE budgets SET name = :budgetName, amount = :budgetAmount WHERE id = :oldBudgetID AND user_id = :usersID",
-               budgetName=budget["name"], budgetAmount=budget["amount"], oldBudgetID=oldBudgetID, usersID=userID)
+               {"budgetName": budget["name"], "budgetAmount": budget["amount"], "oldBudgetID": oldBudgetID, "usersID": userID})
+    db.commit()
 
     # Delete existing category records for the budget
     db.execute("DELETE FROM budgetCategories WHERE budgets_id = :oldBudgetID",
-               oldBudgetID=oldBudgetID)
+               {"oldBudgetID": oldBudgetID})
+    db.commit()
 
     # Get category IDs from DB for the new budget
     categoryIDS = getBudgetCategoryIDS(budget["categories"], userID)
@@ -158,11 +168,11 @@ def getBudgetCategoryIDS(categories, userID):
     for category in categories:
         # Get the category ID
         categoryID = db.execute("SELECT categories.id FROM userCategories INNER JOIN categories ON userCategories.category_id = categories.id WHERE userCategories.user_id = :usersID AND categories.name = :categoryName",
-                                usersID=userID, categoryName=category["name"])
+                                {"usersID": userID, "categoryName": category["name"]}).fetchone()[0]
 
         # Store the category ID and associated percent amount into a dict
         id_amount = {"id": None, "amount": None}
-        id_amount["id"] = categoryID[0]["id"]
+        id_amount["id"] = categoryID
         id_amount["amount"] = category["percent"]
 
         # Add the dictionary to the list of categoryIDs
@@ -179,11 +189,13 @@ def deleteBudget(budgetName, userID):
     if budgetID:
         # Delete the records for budgetCategories
         db.execute("DELETE FROM budgetCategories WHERE budgets_id = :budgetID",
-                   budgetID=budgetID)
+                   {"budgetID": budgetID})
+        db.commit()
 
         # Delete the budget
         db.execute("DELETE FROM budgets WHERE id = :budgetID",
-                   budgetID=budgetID)
+                   {"budgetID": budgetID})
+        db.commit()
 
         return budgetName
     else:
@@ -194,24 +206,26 @@ def deleteBudget(budgetName, userID):
 def getBudgetID(budgetName, userID):
     # Query the DB for a budget ID based on the user and the supplied budget name
     budgetID = db.execute("SELECT id FROM budgets WHERE user_id = :usersID AND name = :budgetName",
-                          usersID=userID, budgetName=budgetName)
+                          {"usersID": userID, "budgetName": budgetName}).fetchone()[0]
 
     if not budgetID:
         return None
     else:
-        return budgetID[0]["id"]
+        return budgetID
 
 
 # Get and return a bool based on whether or not a new/updated budget name already exists for the user
 def isUniqueBudgetName(budgetName, budgetID, userID):
     if budgetID == None:
         # Verify the net-new created budget name is not already existing in the users existing budgets
-        existingBudgets = db.execute(
-            "SELECT name FROM budgets WHERE user_id = :usersID", usersID=userID)
+        results = db.execute(
+            "SELECT name FROM budgets WHERE user_id = :usersID", {"usersID": userID}).fetchall()
+        existingBudgets = convertSQLToDict(results)
     else:
         # Verify the updated budget name is not already existing in the users existing budgets
-        existingBudgets = db.execute(
-            "SELECT name FROM budgets WHERE user_id = :usersID AND NOT id = :oldBudgetID", usersID=userID, oldBudgetID=budgetID)
+        results = db.execute(
+            "SELECT name FROM budgets WHERE user_id = :usersID AND NOT id = :oldBudgetID", {"usersID": userID, "oldBudgetID": budgetID}).fetchall()
+        existingBudgets = convertSQLToDict(results)
 
     # Loop through all budgets and compare names
     isUniqueName = True
@@ -233,8 +247,9 @@ def getUpdatableBudget(budget, userID):
     categories = tendie_categories.getSpendCategories(userID)
 
     # Get the budget's spend categories and % amount for each category
-    budgetCategories = db.execute("SELECT DISTINCT categories.name, budgetCategories.amount FROM budgetCategories INNER JOIN categories ON budgetCategories.category_id = categories.id INNER JOIN budgets ON budgetCategories.budgets_id = budgets.id WHERE budgets.id = :budgetsID",
-                                  budgetsID=budget["id"])
+    results = db.execute("SELECT DISTINCT categories.name, budgetCategories.amount FROM budgetCategories INNER JOIN categories ON budgetCategories.category_id = categories.id INNER JOIN budgets ON budgetCategories.budgets_id = budgets.id WHERE budgets.id = :budgetsID",
+                         {"budgetsID": budget["id"]}).fetchall()
+    budgetCategories = convertSQLToDict(results)
 
     # Add 'categories' as a new key/value pair to the existing budget dict
     budget["categories"] = []

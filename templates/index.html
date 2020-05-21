@@ -161,7 +161,7 @@ Home
                         <tr>
                             <td>{{ expense['description'] }}</td>
                             <td>{{ expense['category'] }}</td>
-                            <td>{{ expense['expenseDate'] }}</td>
+                            <td>{{ expense['expensedate'] }}</td>
                             <td>{{ expense['payer'] }}</td>
                             <td>{{ expense['amount'] | usd }}</td>
                         </tr>
@@ -336,7 +336,7 @@ Home
 
 {% if spending_trends %}
 <script>
-    var trendsData = JSON.stringify({{spending_trends | tojson }});
+    var trendsData = JSON.stringify({{ spending_trends | tojson }});
     loadTrendsData(trendsData);
 </script>
 {% endif %}

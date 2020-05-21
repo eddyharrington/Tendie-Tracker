@@ -2,7 +2,6 @@ import os
 import json
 import requests
 import copy
-import config
 import calendar
 import tendie_dashboard
 import tendie_expenses
@@ -11,9 +10,10 @@ import tendie_categories
 import tendie_reports
 import tendie_account
 
-from cs50 import SQL
 from flask import Flask, jsonify, redirect, render_template, request, session
 from flask_session import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
@@ -23,6 +23,9 @@ from helpers import apology, login_required, usd
 
 # Configure application
 app = Flask(__name__)
+
+# Set app key
+app.secret_key = os.environ.get("SECRET_KEY")
 
 # Ensure templates are auto-reloaded
 app.config["TEMPLATES_AUTO_RELOAD"] = True
@@ -45,9 +48,9 @@ Session(app)
 # Custom filter
 app.jinja_env.filters["usd"] = usd
 
-# Configure CS50 Library to use SQLite database
-# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
-db = SQL(config.testingDB)
+# Create engine object to manage connections to DB, and scoped session to separate user interactions with DB
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -59,7 +62,7 @@ def register():
         # Query DB for all existing user names and make sure new username isn't already taken
         username = request.form.get("username").strip()
         existingUsers = db.execute(
-            "SELECT username FROM users WHERE LOWER(username) = :username", username=username.lower())
+            "SELECT username FROM users WHERE LOWER(username) = :username", {"username": username.lower()}).fetchone()
         if existingUsers:
             return render_template("register.html", username=username)
 
@@ -75,12 +78,14 @@ def register():
         # Insert user into the database
         hashedPass = generate_password_hash(password)
         now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
-        newUserID = db.execute("INSERT INTO users (username, hash, registerDate, lastLogin) VALUES (:username, :hashedPass, :registerDate, :lastLogin)",
-                               username=username, hashedPass=hashedPass, registerDate=now, lastLogin=now)
+        newUserID = db.execute("INSERT INTO users (username, hash, registerDate, lastLogin) VALUES (:username, :hashedPass, :registerDate, :lastLogin) RETURNING id",
+                               {"username": username, "hashedPass": hashedPass, "registerDate": now, "lastLogin": now}).fetchone()[0]
+        db.commit()
 
         # Create default spending categories for user
         db.execute("INSERT INTO userCategories (category_id, user_id) VALUES (1, :usersID), (2, :usersID), (3, :usersID), (4, :usersID), (5, :usersID), (6, :usersID), (7, :usersID), (8, :usersID)",
-                   usersID=newUserID)
+                   {"usersID": newUserID})
+        db.commit()
 
         # Auto-login the user after creating their username
         session["user_id"] = newUserID
@@ -113,7 +118,7 @@ def login():
 
         # Query database for username
         rows = db.execute("SELECT * FROM users WHERE username = :username",
-                          username=request.form.get("username"))
+                          {"username": request.form.get("username")}).fetchall()
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
@@ -125,7 +130,8 @@ def login():
         # Record the login time
         now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
         db.execute(
-            "UPDATE users SET lastLogin = :lastLogin WHERE id = :usersID", lastLogin=now, usersID=session["user_id"])
+            "UPDATE users SET lastLogin = :lastLogin WHERE id = :usersID", {"lastLogin": now, "usersID": session["user_id"]})
+        db.commit()
 
         # Redirect user to home page
         return redirect("/")
@@ -401,9 +407,6 @@ def createbudget():
         # Get the users income
         income = tendie_account.getIncome(session["user_id"])
 
-        # Get the users current budgets
-        budgets = tendie_budgets.getBudgets(session["user_id"])
-
         # Get the users total budgeted amount
         budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
 
@@ -667,6 +670,17 @@ def spendingreport():
     return render_template("spendingreport.html", spending_trends_chart=spendingReport["chart"], spending_trends_table=spendingReport["table"], categories=spendingReport["categories"])
 
 
+@app.route("/payersreport", methods=["GET"])
+@login_required
+def payersreport():
+    """View payers spending report"""
+
+    # Generate a data structure that combines the users payers and expense data for chart and table
+    payersReport = tendie_reports.generatePayersReport(session["user_id"])
+
+    return render_template("payersreport.html", payers=payersReport)
+
+
 @app.route("/account", methods=["GET", "POST"])
 @login_required
 def updateaccount():
@@ -793,17 +807,6 @@ def updateaccount():
         user = tendie_account.getAllUserInfo(session["user_id"])
 
         return render_template("account.html", username=user["name"], income=user["income"], payers=user["payers"], stats=user["stats"], newIncome=None, addPayer=None, renamedPayer=None, deletedPayer=None, updatedPassword=None)
-
-
-@app.route("/payersreport", methods=["GET"])
-@login_required
-def payersreport():
-    """View payers spending report"""
-
-    # Generate a data structure that combines the users payers and expense data for chart and table
-    payersReport = tendie_reports.generatePayersReport(session["user_id"])
-
-    return render_template("payersreport.html", payers=payersReport)
 
 
 # Handle errors by rendering apology

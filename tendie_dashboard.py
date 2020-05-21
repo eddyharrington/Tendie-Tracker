@@ -1,30 +1,36 @@
-import config
+import os
 import calendar
 import tendie_budgets
 
-from cs50 import SQL
 from flask import request, session
 from flask_session import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from helpers import convertSQLToDict
 
-# Configure CS50 Library to use SQLite database
-# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
-db = SQL(config.testingDB)
+# Create engine object to manage connections to DB, and scoped session to separate user interactions with DB
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
 
 
 # Get and return the users total spend for the current calendar year
 def getTotalSpend_Year(userID):
-    totalSpendYear = db.execute(
-        "SELECT SUM(amount) AS 'expenses_year' FROM expenses WHERE user_id = :usersID AND expenseDate >= date('now','start of year') AND expenseDate < date('now','start of year','+1 year')",
-        usersID=userID)
+    results = db.execute(
+        "SELECT SUM(amount) AS expenses_year FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', CURRENT_DATE)",
+        {"usersID": userID}).fetchall()
+
+    totalSpendYear = convertSQLToDict(results)
 
     return totalSpendYear[0]['expenses_year']
 
 
 # Get and return the users total spend for the current month
 def getTotalSpend_Month(userID):
-    totalSpendMonth = db.execute(
-        "SELECT SUM(amount) AS 'expenses_month' FROM expenses WHERE user_id = :usersID AND expenseDate < date('now','start of month','+1 month') AND expenseDate >= date('now','start of month')",
-        usersID=userID)
+    results = db.execute(
+        "SELECT SUM(amount) AS expenses_month FROM expenses WHERE user_id = :usersID AND date_part('month', date(expensedate)) = date_part('month', CURRENT_DATE)",
+        {"usersID": userID}).fetchall()
+
+    totalSpendMonth = convertSQLToDict(results)
 
     return totalSpendMonth[0]['expenses_month']
 
@@ -32,17 +38,21 @@ def getTotalSpend_Month(userID):
 # Get and return the users total spend for the current week
 def getTotalSpend_Week(userID):
     # Query note: Day 0 of a week == Sunday. This query grabs expenses between the *current* weeks Monday and Sunday.
-    totalSpendWeek = db.execute(
-        "SELECT SUM(amount) AS 'expenses_week' FROM expenses WHERE user_id = :usersID AND expenseDate <= date('now','weekday 0') AND expenseDate >= date('now','weekday 0','-6 day')",
-        usersID=userID)
+    results = db.execute(
+        "SELECT SUM(amount) AS expenses_week FROM expenses WHERE user_id = :usersID AND date_part('week', date(expensedate)) = date_part('week', CURRENT_DATE)",
+        {"usersID": userID}).fetchall()
+
+    totalSpendWeek = convertSQLToDict(results)
 
     return totalSpendWeek[0]['expenses_week']
 
 
 # Get and return the users last 5 expenses
 def getLastFiveExpenses(userID):
-    lastFiveExpenses = db.execute(
-        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY submitTime DESC LIMIT 5", usersID=userID)
+    results = db.execute(
+        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY submitTime DESC LIMIT 5", {"usersID": userID}).fetchall()
+
+    lastFiveExpenses = convertSQLToDict(results)
 
     if lastFiveExpenses:
         return lastFiveExpenses
@@ -64,9 +74,11 @@ def getBudgets(userID):
             budget["amount"] = record["amount"]
 
             # Query the DB for the budgets total spent amount (calculated as the sum of expenses with categories that match the categories selected for the individual budget)
-            budget_TotalSpent = db.execute(
-                "SELECT SUM(amount) AS 'spent' FROM expenses WHERE user_id = :usersID AND strftime('%Y',expenseDate) >= strftime('%Y','now') AND strftime('%Y',expenseDate) < strftime('%Y','now','+1 year') AND category IN (SELECT categories.name FROM budgetCategories INNER JOIN categories on budgetCategories.category_id = categories.id WHERE budgetCategories.budgets_id = :budgetID)",
-                usersID=userID, budgetID=budgetID)
+            results = db.execute(
+                "SELECT SUM(amount) AS spent FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', CURRENT_DATE) AND category IN (SELECT categories.name FROM budgetcategories INNER JOIN categories on budgetcategories.category_id = categories.id WHERE budgetcategories.budgets_id = :budgetID)",
+                {"usersID": userID, "budgetID": budgetID}).fetchall()
+            budget_TotalSpent = convertSQLToDict(results)
+
             if (budget_TotalSpent[0]["spent"] == None):
                 budget["spent"] = 0
             else:
@@ -91,7 +103,9 @@ def getBudgets(userID):
 # Gets the last four weeks start dates and end dates (e.g. '2020-04-13' and '2020-04-19')
 def getLastFourWeekNames():
     # Query note: looks back 3 weeks from the current week and *thru* the current week to give a total of 4 weeks of start/end dates
-    weekNames = db.execute("select date('now','weekday 0','-6 day') AS 'startOfWeek', date('now','weekday 0') AS 'endOfWeek' UNION select date('now','-7 day','weekday 0','-6 day') AS 'startOfWeek', date('now','-7 day','weekday 0') AS 'endOfWeek' UNION select date('now','-14 day','weekday 0','-6 day') AS 'startOfWeek', date('now','-14 day','weekday 0') AS 'endOfWeek' UNION select date('now','-21 day','weekday 0','-6 day') AS 'startOfWeek', date('now','-21 day','weekday 0') AS 'endOfWeek'")
+    results = db.execute("SELECT date_trunc('week', CURRENT_DATE)::date AS startofweek, (date_trunc('week', CURRENT_DATE) + interval '6 day')::date AS endofweek UNION SELECT date_trunc('week', CURRENT_DATE - interval '1 week')::date AS startofweek, (date_trunc('week', CURRENT_DATE - interval '1 week') + interval '6 day')::date AS endofweek UNION SELECT date_trunc('week', CURRENT_DATE - interval '2 week')::date AS startofweek, (date_trunc('week', CURRENT_DATE - interval '2 week') + interval '6 day')::date AS endofweek UNION SELECT date_trunc('week', CURRENT_DATE - interval '3 week')::date AS startofweek, (date_trunc('week', CURRENT_DATE - interval '3 week') + interval '6 day')::date AS endofweek ORDER BY startofweek ASC").fetchall()
+
+    weekNames = convertSQLToDict(results)
 
     return weekNames
 
@@ -103,11 +117,12 @@ def getWeeklySpending(weekNames, userID):
 
     # Loop through each week and store the name/amount in a dict
     for name in weekNames:
-        week["endOfWeek"] = name["endOfWeek"]
-        week["startOfWeek"] = name["startOfWeek"]
-        weekSpending = db.execute(
-            "SELECT SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID AND strftime('%W',expenseDate) = strftime('%W',:weekName)",
-            usersID=userID, weekName=week["endOfWeek"])
+        week["endOfWeek"] = str(name["endofweek"])
+        week["startOfWeek"] = str(name["startofweek"])
+        results = db.execute(
+            "SELECT SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('week', date(expensedate)) = date_part('week',date(:weekName))",
+            {"usersID": userID, "weekName": week["endOfWeek"]}).fetchall()
+        weekSpending = convertSQLToDict(results)
 
         # Set the amount to 0 if there are no expenses for a given week
         if weekSpending[0]["amount"] == None:
@@ -136,9 +151,10 @@ def getMonthlySpending(userID):
     month = {"name": None, "amount": None}
 
     # Query note: pulls data for months of the *current* calendar year
-    spending_month_query = db.execute(
-        "SELECT LTRIM(strftime('%m',expenseDate),0) AS 'month', SUM(amount) AS 'amount' FROM expenses WHERE user_id = :usersID AND expenseDate > date('now','-11 month','start of month','-1 day') GROUP BY (strftime('%m',expenseDate))",
-        usersID=userID)
+    results = db.execute(
+        "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date(expensedate) > date_trunc('month',(CURRENT_DATE - interval '11 months')) - interval '1 day' GROUP BY date_part('month', date(expensedate))",
+        {"usersID": userID}).fetchall()
+    spending_month_query = convertSQLToDict(results)
 
     for record in spending_month_query:
         month["name"] = calendar.month_abbr[int(record["month"])]
@@ -154,8 +170,9 @@ def getSpendingTrends(userID):
     spending_trends = []
     categoryTrend = {"name": None, "proportionalAmount": None,
                      "totalSpent": None, "totalCount": None}
-    categories = db.execute("SELECT category, COUNT(category) as 'count', SUM(amount) as 'amount' FROM expenses WHERE user_id = :usersID GROUP BY category ORDER BY COUNT(category) DESC",
-                            usersID=userID)
+    results = db.execute("SELECT category, COUNT(category) as count, SUM(amount) as amount FROM expenses WHERE user_id = :usersID GROUP BY category ORDER BY COUNT(category) DESC",
+                         {"usersID": userID}).fetchall()
+    categories = convertSQLToDict(results)
 
     # Calculate the total amount spent
     totalSpent = 0

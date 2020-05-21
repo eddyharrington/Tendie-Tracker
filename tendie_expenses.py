@@ -1,14 +1,16 @@
-import config
+import os
 import calendar
 
-from cs50 import SQL
 from flask import request, session
 from flask_session import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
 from datetime import datetime
+from helpers import convertSQLToDict
 
-# Configure CS50 Library to use SQLite database
-# db = SQL("sqlite:///localhostDBForTesting.db") # can be used for testing locally
-db = SQL(config.testingDB)
+# Create engine object to manage connections to DB, and scoped session to separate user interactions with DB
+engine = create_engine(os.getenv("DATABASE_URL"))
+db = scoped_session(sessionmaker(bind=engine))
 
 
 # Add expense(s) to the users expense records
@@ -53,15 +55,18 @@ def addExpenses(formData, userID):
     for expense in expenses:
         now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
         db.execute("INSERT INTO expenses (description, category, expenseDate, amount, payer, submitTime, user_id) VALUES (:description, :category, :expenseDate, :amount, :payer, :submitTime, :usersID)",
-                   description=expense["description"], category=expense["category"], expenseDate=expense["date"], amount=expense["amount"], payer=expense["payer"], submitTime=now, usersID=userID)
+                   {"description": expense["description"], "category": expense["category"], "expenseDate": expense["date"], "amount": expense["amount"], "payer": expense["payer"], "submitTime": now, "usersID": userID})
+    db.commit()
 
     return expenses
 
 
 # Get and return the users lifetime expense history
 def getHistory(userID):
-    history = db.execute("SELECT description, category, expenseDate AS 'date', payer, amount, submitTime FROM expenses WHERE user_id = :usersID ORDER BY submitTime ASC",
-                         usersID=userID)
+    results = db.execute("SELECT description, category, expenseDate AS date, payer, amount, submitTime FROM expenses WHERE user_id = :usersID ORDER BY submitTime ASC",
+                         {"usersID": userID}).fetchall()
+
+    history = convertSQLToDict(results)
 
     return history
 
@@ -83,11 +88,11 @@ def getExpense(formData, userID):
 
     # Query the DB for the expense unique identifier
     expenseID = db.execute("SELECT id FROM expenses WHERE user_id = :usersID AND description = :oldDescription AND category = :oldCategory AND expenseDate = :oldDate AND amount = :oldAmount AND payer = :oldPayer AND submitTime = :oldSubmitTime",
-                           usersID=userID, oldDescription=expense["description"], oldCategory=expense["category"], oldDate=expense["date"], oldAmount=expense["amount"], oldPayer=expense["payer"], oldSubmitTime=expense["submitTime"])
+                           {"usersID": userID, "oldDescription": expense["description"], "oldCategory": expense["category"], "oldDate": expense["date"], "oldAmount": expense["amount"], "oldPayer": expense["payer"], "oldSubmitTime": expense["submitTime"]}).fetchone()
 
     # Make sure a record was found for the expense otherwise set as None
     if expenseID:
-        expense["id"] = expenseID[0]["id"]
+        expense["id"] = expenseID[0]
     else:
         expense["id"] = None
 
@@ -97,7 +102,8 @@ def getExpense(formData, userID):
 # Delete an existing expense record for the user
 def deleteExpense(expense, userID):
     result = db.execute("DELETE FROM expenses WHERE user_id = :usersID AND id = :oldExpenseID",
-                        usersID=userID, oldExpenseID=expense["id"])
+                        {"usersID": userID, "oldExpenseID": expense["id"]})
+    db.commit()
 
     return result
 
@@ -131,7 +137,8 @@ def updateExpense(oldExpense, formData, userID):
     # Update the existing record
     now = datetime.now().strftime("%m/%d/%Y %H:%M:%S")
     result = db.execute("UPDATE expenses SET description = :newDescription, category = :newCategory, expenseDate = :newDate, amount = :newAmount, payer = :newPayer, submitTime = :newSubmitTime WHERE id = :existingExpenseID AND user_id = :usersID",
-                        newDescription=expense["description"], newCategory=expense["category"], newDate=expense["date"], newAmount=expense["amount"], newPayer=expense["payer"], newSubmitTime=now, existingExpenseID=oldExpense["id"], usersID=userID)
+                        {"newDescription": expense["description"], "newCategory": expense["category"], "newDate": expense["date"], "newAmount": expense["amount"], "newPayer": expense["payer"], "newSubmitTime": now, "existingExpenseID": oldExpense["id"], "usersID": userID}).rowcount
+    db.commit()
 
     # Make sure result is not empty (indicating it could not update the expense)
     if result:

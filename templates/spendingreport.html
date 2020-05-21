@@ -91,8 +91,8 @@
     {% if spending_trends_chart or spending_trends_table %}
     <script src="/static/js/reports.js"></script>
     <script>
-        var trendsData_chart = JSON.stringify({{spending_trends_chart | tojson }});
-        var trendsData_table = JSON.stringify({{spending_trends_table | tojson }});
+        var trendsData_chart = JSON.stringify({{ spending_trends_chart | tojson }});
+        var trendsData_table = JSON.stringify({{ spending_trends_table | tojson }});
         loadTrendsData(trendsData_chart, trendsData_table);
     </script>
     {% endif %}
