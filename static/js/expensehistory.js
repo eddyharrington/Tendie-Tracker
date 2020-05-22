@@ -4,7 +4,7 @@
 $(document).ready(function () {
     $('#expenses').DataTable({
         "pagingType": "full_numbers",
-        "order": [[3, "desc"]],
+        "order": [[0, "desc"]],
         dom: 'Bfrtip',
         buttons: [
             'copy', 'csv', 'excel'
