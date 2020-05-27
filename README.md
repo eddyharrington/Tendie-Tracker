@@ -63,4 +63,9 @@ DATABASE_URL=postgres://{user}:{password}@{hostname}:{port}/{database-name}
 7) Build and run the Flask app in VSCode
 
 ## Discussion
-I started working on this in March 2020 as part of my CS50 final project. My main goal was to replace an Excel file I was using for tracking expenses and originally this app had only 1 form and 2 or 3 pages on it. The pandemic gave me extra time to think and explore different technology so I ended up adding features that I was curious to learn about.
+I started working on this in March 2020 as part of my CS50 final project. My main goal was to replace an Excel file I was using for tracking expenses and originally this app had only 1 form and 2 or 3 pages on it. The pandemic gave me extra time to think and explore different technology so I ended up adding features that I was curious to learn about. Some of the other things I wanted to add and may work on at a later time include:
+  * Tests
+  * User intro / walk-through of the app
+  * Improved budget tracking (i.e calculates if your weekly / monthly spending is on-track or not)
+  * Dark theme
+  * Suggested spend categories
