@@ -46,7 +46,7 @@ def generateBudgetsReport(userID, year=None):
 # Generates data needed for the monthly spending report
 def generateMonthlyReport(userID, year=None):
 
-    # Default to getting current years budgets
+    # Default to getting current years reports
     if not year:
         year = datetime.now().year
 
@@ -66,10 +66,14 @@ def generateMonthlyReport(userID, year=None):
 
 
 # Generates data needed for the spending trends report
-def generateSpendingTrendsReport(userID):
+def generateSpendingTrendsReport(userID, year=None):
+
+    # Default to getting current years reports
+    if not year:
+        year = datetime.now().year
 
     # Get chart data for spending trends
-    spending_trends_chart = tendie_dashboard.getSpendingTrends(userID)
+    spending_trends_chart = tendie_dashboard.getSpendingTrends(userID, year)
 
     # Data structure for spending trends table
     categories = []
@@ -111,8 +115,9 @@ def generateSpendingTrendsReport(userID):
 
     # Get expense data for each category by month (retrieves the total amount of expenses per category by month, and the total count of expenses per category by month. Assumes there is at least 1 expense for the category)
     results = db.execute(
-        "SELECT date_part('month', date(expensedate)) AS monthofcategoryexpense, category AS name, COUNT(category) AS count, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID GROUP BY date_part('month', date(expensedate)), category ORDER BY COUNT(category) DESC",
-        {"usersID": userID}).fetchall()
+        "SELECT date_part('month', date(expensedate)) AS monthofcategoryexpense, category AS name, COUNT(category) AS count, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year GROUP BY date_part('month', date(expensedate)), category ORDER BY COUNT(category) DESC",
+        {"usersID": userID, "year": year}).fetchall()
+
     spending_trends_table_query = convertSQLToDict(results)
 
     # Loop thru each monthly category expense from above DB query and update the data structure that holds all monthly category expenses

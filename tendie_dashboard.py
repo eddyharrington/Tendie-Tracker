@@ -155,11 +155,10 @@ def getMonthlySpending(userID, year=None):
     spending_month = []
     month = {"name": None, "amount": None}
 
-    # Default to getting current years budgets
+    # Default to getting current years spending
     if not year:
         year = datetime.now().year
 
-    # Query note: pulls data for months of the *current* calendar year
     results = db.execute(
         "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year GROUP BY date_part('month', date(expensedate)) ORDER BY month",
         {"usersID": userID, "year": year}).fetchall()
@@ -175,12 +174,18 @@ def getMonthlySpending(userID, year=None):
 
 
 # Get and return trends for every spending category that accounts for >1% of overall spend (bubble chart)
-def getSpendingTrends(userID):
+def getSpendingTrends(userID, year=None):
+
     spending_trends = []
     categoryTrend = {"name": None, "proportionalAmount": None,
                      "totalSpent": None, "totalCount": None}
-    results = db.execute("SELECT category, COUNT(category) as count, SUM(amount) as amount FROM expenses WHERE user_id = :usersID GROUP BY category ORDER BY COUNT(category) DESC",
-                         {"usersID": userID}).fetchall()
+
+    # Default to getting current years spending
+    if not year:
+        year = datetime.now().year
+
+    results = db.execute("SELECT category, COUNT(category) as count, SUM(amount) as amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year GROUP BY category ORDER BY COUNT(category) DESC",
+                         {"usersID": userID, "year": year}).fetchall()
     categories = convertSQLToDict(results)
 
     # Calculate the total amount spent

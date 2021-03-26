@@ -686,7 +686,7 @@ def monthlyreport(year=None):
         if not 2020 <= year <= currentYear:
             return apology(f"Please select a valid budget year: 2020 through {currentYear}")
     else:
-        # Set year to current year if it was not in the route (this will set UX to display current years budgets)
+        # Set year to current year if it was not in the route (this will set UX to display current years report)
         year = datetime.now().year
 
     # Generate a data structure that combines the users monthly spending data needed for chart and table
@@ -697,15 +697,25 @@ def monthlyreport(year=None):
 
 
 @app.route("/spendingreport", methods=["GET"])
+@app.route("/spendingreport/<int:year>", methods=["GET"])
 @login_required
-def spendingreport():
+def spendingreport(year=None):
     """View spending categories report"""
+
+    # Make sure the year from route is valid
+    if year:
+        currentYear = datetime.now().year
+        if not 2020 <= year <= currentYear:
+            return apology(f"Please select a valid budget year: 2020 through {currentYear}")
+    else:
+        # Set year to current year if it was not in the route (this will set UX to display current years report)
+        year = datetime.now().year
 
     # Generate a data structure that combines the users all-time spending data for chart and table
     spendingReport = tendie_reports.generateSpendingTrendsReport(
-        session["user_id"])
+        session["user_id"], year)
 
-    return render_template("spendingreport.html", spending_trends_chart=spendingReport["chart"], spending_trends_table=spendingReport["table"], categories=spendingReport["categories"])
+    return render_template("spendingreport.html", spending_trends_chart=spendingReport["chart"], spending_trends_table=spendingReport["table"], categories=spendingReport["categories"], year=year)
 
 
 @app.route("/payersreport", methods=["GET"])
