@@ -151,7 +151,7 @@ function loadMonthlySpendingChart(monthlySpendingChart) {
                 legend: { display: false },
                 title: {
                     display: true,
-                    text: 'Total spending per month during the current the year'
+                    text: 'Total spending per month'
                 },
                 responsive: true,
                 maintainAspectRatio: false,
@@ -174,7 +174,7 @@ function loadMonthlySpendingTable(monthlySpendingTable) {
     else {
         $('#monthlyExpenses').DataTable({
             "pagingType": "full_numbers",
-            "order": [[3, "desc"]],
+            "order": [[0, "asc"]],
             "scrollY": "300px",
             "scrollCollapse": true,
             "paging": false,

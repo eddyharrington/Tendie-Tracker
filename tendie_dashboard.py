@@ -150,15 +150,19 @@ def getWeeklySpending(weekNames, userID):
     return weeklySpending
 
 
-# Get and return monthly spending for the user (bar chart)
-def getMonthlySpending(userID):
+# Get and return monthly spending for a given year (bar chart)
+def getMonthlySpending(userID, year=None):
     spending_month = []
     month = {"name": None, "amount": None}
 
+    # Default to getting current years budgets
+    if not year:
+        year = datetime.now().year
+
     # Query note: pulls data for months of the *current* calendar year
     results = db.execute(
-        "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date(expensedate) > date_trunc('month',(CURRENT_DATE - interval '11 months')) - interval '1 day' GROUP BY date_part('month', date(expensedate)) ORDER BY month",
-        {"usersID": userID}).fetchall()
+        "SELECT date_part('month', date(expensedate)) AS month, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year GROUP BY date_part('month', date(expensedate)) ORDER BY month",
+        {"usersID": userID, "year": year}).fetchall()
     spending_month_query = convertSQLToDict(results)
 
     for record in spending_month_query:

@@ -44,14 +44,18 @@ def generateBudgetsReport(userID, year=None):
 
 
 # Generates data needed for the monthly spending report
-def generateMonthlyReport(userID):
+def generateMonthlyReport(userID, year=None):
+
+    # Default to getting current years budgets
+    if not year:
+        year = datetime.now().year
 
     # Create data structure to hold users monthly spending data for the chart (monthly summed data)
-    spending_month_chart = tendie_dashboard.getMonthlySpending(userID)
+    spending_month_chart = tendie_dashboard.getMonthlySpending(userID, year)
 
     # Get the spending data from DB for the table (individual expenses per month)
     results = db.execute(
-        "SELECT description, category, expensedate, amount, payer FROM expenses WHERE user_id = :usersID AND date(expensedate) > date_trunc('month',(CURRENT_DATE - interval '11 months')) - interval '1 day' ORDER BY submitTime ASC", {"usersID": userID}).fetchall()
+        "SELECT description, category, expensedate, amount, payer FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year ORDER BY id DESC", {"usersID": userID, "year": year}).fetchall()
     spending_month_table = convertSQLToDict(results)
 
     # Combine both data points (chart and table) into a single data structure

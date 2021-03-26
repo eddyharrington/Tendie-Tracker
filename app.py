@@ -675,14 +675,25 @@ def budgetsreport(year=None):
 
 
 @app.route("/monthlyreport", methods=["GET"])
+@app.route("/monthlyreport/<int:year>", methods=["GET"])
 @login_required
-def monthlyreport():
+def monthlyreport(year=None):
     """View monthly spending report"""
 
-    # Generate a data structure that combines the users monthly spending data needed for chart and table
-    monthlySpending = tendie_reports.generateMonthlyReport(session["user_id"])
+    # Make sure the year from route is valid
+    if year:
+        currentYear = datetime.now().year
+        if not 2020 <= year <= currentYear:
+            return apology(f"Please select a valid budget year: 2020 through {currentYear}")
+    else:
+        # Set year to current year if it was not in the route (this will set UX to display current years budgets)
+        year = datetime.now().year
 
-    return render_template("monthlyreport.html", monthlySpending=monthlySpending)
+    # Generate a data structure that combines the users monthly spending data needed for chart and table
+    monthlySpending = tendie_reports.generateMonthlyReport(
+        session["user_id"], year)
+
+    return render_template("monthlyreport.html", monthlySpending=monthlySpending, year=year)
 
 
 @app.route("/spendingreport", methods=["GET"])

@@ -177,7 +177,7 @@ function loadMonthlySpendingChart(monthlySpending) {
                 legend: { display: false },
                 title: {
                     display: true,
-                    text: 'Total spending per month during the current the year'
+                    text: 'Total spending per month during the current year'
                 },
                 responsive: true,
                 maintainAspectRatio: false,

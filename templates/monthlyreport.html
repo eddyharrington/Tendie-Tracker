@@ -1,81 +1,110 @@
 {% extends "layout.html" %}
 
 {% block styles %}
-        <!--Data Tables-->
-        <link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet">
-        <!--Data Tables Plugins (export buttons)-->
-        <link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" rel="stylesheet">
-        <!--Responsive Expense Tables-->
-        <link href="/static/css/expenses.css" rel="stylesheet">
+<!--Data Tables-->
+<link href="https://cdn.datatables.net/1.10.20/css/jquery.dataTables.min.css" rel="stylesheet">
+<!--Data Tables Plugins (export buttons)-->
+<link href="https://cdn.datatables.net/buttons/1.6.1/css/buttons.dataTables.min.css" rel="stylesheet">
+<!--Responsive Expense Tables-->
+<link href="/static/css/expenses.css" rel="stylesheet">
 {% endblock %}
 
 {% block scripts %}
-        <!--Chart.js-->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
-        <!--Data Tables-->
-        <script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
-        <!--Data Tables Plugins (export buttons)-->
-        <script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js"></script>
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
-        <script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
+<!--Chart.js-->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+<!--Data Tables-->
+<script src="https://cdn.datatables.net/1.10.20/js/jquery.dataTables.min.js"></script>
+<!--Data Tables Plugins (export buttons)-->
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.flash.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.3/jszip.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/1.6.1/js/buttons.html5.min.js"></script>
 {% endblock %}
 
 {% block title %}
-    Reports | Monthly Spending
+Reports | Monthly Spending
 {% endblock %}
 
 {% block main %}
-    <h1>Monthly Spending Report</h1>
-    <br>
+<h1>Monthly Spending Report</h1>
+<br>
 
-    {% if monthlySpending["chart"] %}
-    <!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
-    <div class="chart-container" style="position: relative; height:30vh">
-        <canvas id="monthlyChart" width="400" height="400"></canvas>
-    </div>
-    <br>
-    {% endif %}
+<span style="font-weight:bold;">Year:</span>
+<select name="year" id="year" class="custom-select" style="width:auto;"
+    onchange="window.location = '/monthlyreport/' + this.options[this.selectedIndex].value"></select>
+<br><br>
 
-    {% if monthlySpending["table"] %}
-    <h3>Last 12 months of spending</h3>
-    <!--Table functionality courtesty of DataTables.net-->
-    <table id="monthlyExpenses" class="display" style="width:100%">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Description</th>
-                <th>Category</th>
-                <th>Date</th>
-                <th>Payer</th>
-                <th>Amount</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for record in monthlySpending["table"] %}
-            <tr>
-                <td>{{ loop.index }}</td>
-                <td>{{ record["description"] }}</td>
-                <td>{{ record["category"] }}</td>
-                <td>{{ record["expensedate"] }}</td>
-                <td>{{ record["payer"] }}</td>
-                <td>{{ record["amount"] | usd}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <p>You don't have any expenses yet 😥</p>
-    {% endif %}
+{% if monthlySpending["chart"] %}
+<!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
+<div class="chart-container" style="position: relative; height:30vh">
+    <canvas id="monthlyChart" width="400" height="400"></canvas>
+</div>
+<br>
+{% endif %}
 
-    {% if monthlySpending %}
-    <script src="/static/js/reports.js"></script>
-    <script>
-        var monthlyData = JSON.stringify({{ monthlySpending | tojson }});
-        loadMonthlySpendingData(monthlyData);
-    </script>
-    {% endif %}
+{% if monthlySpending["table"] %}
+<h3>Spending History</h3>
+<!--Table functionality courtesty of DataTables.net-->
+<table id="monthlyExpenses" class="display" style="width:100%">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Date</th>
+            <th>Payer</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for record in monthlySpending["table"] %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ record["description"] }}</td>
+            <td>{{ record["category"] }}</td>
+            <td>{{ record["expensedate"] }}</td>
+            <td>{{ record["payer"] }}</td>
+            <td>{{ record["amount"] | usd}}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>You don't have any expenses yet 😥</p>
+{% endif %}
+
+<script>
+    $(document).ready(function () {
+        // Get the report year element from the form
+        let years = document.getElementById("year")
+
+        // Get the current year from users machine
+        let currentYear = new Date().getFullYear();
+        let selectedYear = "{{ year }}"
+
+        // Generate allowable years to select for report (2020 thru current year)
+        for (let i = parseInt(currentYear); i >= 2020; i--) {
+            // Create an option tag
+            let option = document.createElement("option");
+            option.innerHTML = i;
+            option.value = i;
+            // Set the selected year
+            if (i == parseInt(selectedYear)) {
+                option.selected = true;
+            }
+            years.appendChild(option);
+        }
+
+    });
+</script>
+
+{% if monthlySpending %}
+<script src="/static/js/reports.js"></script>
+<script>
+    var monthlyData = JSON.stringify({{ monthlySpending | tojson }});
+    loadMonthlySpendingData(monthlyData);
+</script>
+{% endif %}
 
 
 {% endblock %}
-
