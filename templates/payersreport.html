@@ -1,63 +1,93 @@
 {% extends "layout.html" %}
 
 {% block scripts %}
-        <!--Chart.js-->
-        <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
+<!--Chart.js-->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js"></script>
 {% endblock %}
 
 {% block title %}
-    Reports | Payers Spending
+Reports | Payers Spending
 {% endblock %}
 
 {% block main %}
-    <h1>Payers Spending Report</h1>
-    <br>
+<h1>Payers Spending Report</h1>
+<br>
 
-    {% if payers %}
-    <!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
-    <div class="chart-container" style="position: relative; height:40vh">
-        <canvas id="payersChart" width="400" height="400"></canvas>
-    </div>
-    <p><small class="text-muted">Chart note: does not include payers that represent less than 1% of overall spending</small></p>
-    <br>
+<span style="font-weight:bold;">Year:</span>
+<select name="year" id="year" class="custom-select" style="width:auto;"
+    onchange="window.location = '/payersreport/' + this.options[this.selectedIndex].value"></select>
+<br><br>
 
-    <h3>Total Paid Per Payer</h3>
-    <div class="table-responsive">
-        <table class="table table-hover table-striped table-sm">
-            <thead>
-                <tr>
-                    <th scope="col">Payer</th>
-                    <th scope="col">Amount</th>
-                    <th scope="col">% of total</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for payer in payers %}
-                <tr>
-                    <td>{{ payer["name"] }}</td>
-                    <td>{{ payer["amount"] | usd }}</td>
-                    <td>{{ payer["percentAmount"] }}%</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr>
-                    <th>Total</th>
-                    <th>{{ payers | sum(attribute="amount") | usd }}</th>
-                    <th>{{ payers | sum(attribute="percentAmount")}}%</th>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
+{% if payers %}
+<!--Charts courtesty of Chart.js: https://www.chartjs.org/-->
+<div class="chart-container" style="position: relative; height:40vh">
+    <canvas id="payersChart" width="400" height="400"></canvas>
+</div>
+<p><small class="text-muted">Chart note: does not include payers that represent less than 1% of overall spending</small>
+</p>
+<br>
 
-    <script src="/static/js/reports.js"></script>
-    <script>
-        var payersData = JSON.stringify({{ payers | tojson }});
-        loadPayersData(payersData);
-    </script>
-    {% else %}
-    <p>You don't have any expenses yet 😥</p>
-    {% endif %}
+<h3>Total Paid Per Payer</h3>
+<div class="table-responsive">
+    <table class="table table-hover table-striped table-sm">
+        <thead>
+            <tr>
+                <th scope="col">Payer</th>
+                <th scope="col">Amount</th>
+                <th scope="col">% of total</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payer in payers %}
+            <tr>
+                <td>{{ payer["name"] }}</td>
+                <td>{{ payer["amount"] | usd }}</td>
+                <td>{{ payer["percentAmount"] }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th>Total</th>
+                <th>{{ payers | sum(attribute="amount") | usd }}</th>
+                <th>{{ payers | sum(attribute="percentAmount")}}%</th>
+            </tr>
+        </tfoot>
+    </table>
+</div>
+
+<script src="/static/js/reports.js"></script>
+<script>
+    var payersData = JSON.stringify({{ payers | tojson }});
+    loadPayersData(payersData);
+</script>
+{% else %}
+<p>You don't have any expenses yet 😥</p>
+{% endif %}
+
+<script>
+    $(document).ready(function () {
+        // Get the report year element from the form
+        let years = document.getElementById("year")
+
+        // Get the current year from users machine
+        let currentYear = new Date().getFullYear();
+        let selectedYear = "{{ year }}"
+
+        // Generate allowable years to select for report (2020 thru current year)
+        for (let i = parseInt(currentYear); i >= 2020; i--) {
+            // Create an option tag
+            let option = document.createElement("option");
+            option.innerHTML = i;
+            option.value = i;
+            // Set the selected year
+            if (i == parseInt(selectedYear)) {
+                option.selected = true;
+            }
+            years.appendChild(option);
+        }
+
+    });
+</script>
 
 {% endblock %}
-

@@ -719,14 +719,25 @@ def spendingreport(year=None):
 
 
 @app.route("/payersreport", methods=["GET"])
+@app.route("/payersreport/<int:year>", methods=["GET"])
 @login_required
-def payersreport():
+def payersreport(year=None):
     """View payers spending report"""
 
-    # Generate a data structure that combines the users payers and expense data for chart and table
-    payersReport = tendie_reports.generatePayersReport(session["user_id"])
+    # Make sure the year from route is valid
+    if year:
+        currentYear = datetime.now().year
+        if not 2020 <= year <= currentYear:
+            return apology(f"Please select a valid budget year: 2020 through {currentYear}")
+    else:
+        # Set year to current year if it was not in the route (this will set UX to display current years report)
+        year = datetime.now().year
 
-    return render_template("payersreport.html", payers=payersReport)
+    # Generate a data structure that combines the users payers and expense data for chart and table
+    payersReport = tendie_reports.generatePayersReport(
+        session["user_id"], year)
+
+    return render_template("payersreport.html", payers=payersReport, year=year)
 
 
 @app.route("/account", methods=["GET", "POST"])

@@ -153,16 +153,20 @@ def generateSpendingTrendsReport(userID, year=None):
 
 
 # Generates data needed for the payers spending report
-def generatePayersReport(userID):
+def generatePayersReport(userID, year=None):
+
+    # Default to getting current years reports
+    if not year:
+        year = datetime.now().year
 
     # First get all of the payers from expenses table (this may include payers that don't exist anymore for the user (i.e. deleted the payer and didn't update expense records))
     results_payers = db.execute(
-        "SELECT payer AS name, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID GROUP BY payer ORDER BY amount DESC", {"usersID": userID}).fetchall()
+        "SELECT payer AS name, SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year GROUP BY payer ORDER BY amount DESC", {"usersID": userID, "year": year}).fetchall()
     payers = convertSQLToDict(results_payers)
 
     # Now get any payers the user has in their account but haven't expensed anything
     results_nonExpensePayers = db.execute(
-        "SELECT name FROM payers WHERE user_id = :usersID AND name NOT IN (SELECT payer FROM expenses WHERE expenses.user_id = :usersID)", {"usersID": userID}).fetchall()
+        "SELECT name FROM payers WHERE user_id = :usersID AND name NOT IN (SELECT payer FROM expenses WHERE expenses.user_id = :usersID AND date_part('year', date(expensedate)) = :year)", {"usersID": userID, "year": year}).fetchall()
     nonExpensePayers = convertSQLToDict(results_nonExpensePayers)
 
     # Add the non-expense payers to the payers data structure and set their amounts to 0
