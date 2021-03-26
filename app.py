@@ -335,9 +335,19 @@ def expensehistory():
 
 
 @app.route("/budgets", methods=["GET", "POST"])
+@app.route("/budgets/<int:year>", methods=["GET"])
 @login_required
-def budgets():
+def budgets(year=None):
     """Manage budgets"""
+
+    # Make sure the year from route is valid
+    if year:
+        currentYear = datetime.now().year
+        if not 2020 <= year <= currentYear:
+            return apology(f"Please select a valid budget year: 2020 through {currentYear}")
+    else:
+        # Set year to current year if it was not in the route (this will set UX to display current years budgets)
+        year = datetime.now().year
 
     # User reached route via GET
     if request.method == "GET":
@@ -348,9 +358,10 @@ def budgets():
         budgets = tendie_budgets.getBudgets(session["user_id"])
 
         # Get the users total budgeted amount
-        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+        budgeted = tendie_budgets.getTotalBudgetedByYear(
+            session["user_id"], year)
 
-        return render_template("budgets.html", income=income, budgets=budgets, budgeted=budgeted, deletedBudgetName=None)
+        return render_template("budgets.html", income=income, budgets=budgets, year=year, budgeted=budgeted, deletedBudgetName=None)
 
     # User reached route via POST
     else:
@@ -366,9 +377,10 @@ def budgets():
             # Get the users income, current budgets, and sum their budgeted amount unless they don't have any budgets (same steps as a GET for this route)
             income = tendie_account.getIncome(session["user_id"])
             budgets = tendie_budgets.getBudgets(session["user_id"])
-            budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+            budgeted = tendie_budgets.getTotalBudgetedByYear(
+                session["user_id"], year)
 
-            return render_template("budgets.html", income=income, budgets=budgets, budgeted=budgeted, deletedBudgetName=deletedBudgetName)
+            return render_template("budgets.html", income=income, budgets=budgets, year=year, budgeted=budgeted, deletedBudgetName=deletedBudgetName)
         else:
             return apology("Uh oh! Your budget could not be deleted.")
 
@@ -381,8 +393,11 @@ def createbudget():
     # User reached route via POST
     if request.method == "POST":
         # Make sure user has no more than 20 budgets (note: 20 is an arbitrary value)
-        if tendie_budgets.getBudgets(session["user_id"]) is not None:
-            budgetCount = len(tendie_budgets.getBudgets(session["user_id"]))
+        budgets = tendie_budgets.getBudgets(session["user_id"])
+        if budgets:
+            budgetCount = 0
+            for year in budgets:
+                budgetCount += len(budgets[year])
             if budgetCount >= 20:
                 return apology("You've reached the max amount of budgets'")
 
@@ -391,9 +406,10 @@ def createbudget():
 
         # Generate data structure to hold budget info from form
         budgetDict = tendie_budgets.generateBudgetFromForm(formData)
+
         # Render error message if budget name or categories contained invalid data
         if "apology" in budgetDict:
-            return apology(budget["apology"])
+            return apology(budgetDict["apology"])
         else:
             # Add budget to DB for user
             budget = tendie_budgets.createBudget(
@@ -408,7 +424,7 @@ def createbudget():
         income = tendie_account.getIncome(session["user_id"])
 
         # Get the users total budgeted amount
-        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+        budgeted = tendie_budgets.getTotalBudgetedByYear(session["user_id"])
 
         # Get the users spend categories
         categories = tendie_categories.getSpendCategories(session["user_id"])
@@ -431,7 +447,7 @@ def updatebudget(urlvar_budgetname):
 
         # Render error message if budget name or categories contained invalid data
         if "apology" in budgetDict:
-            return apology(budget["apology"])
+            return apology(budgetDict["apology"])
         else:
             # Update budget in the DB for user
             budget = tendie_budgets.updateBudget(
@@ -457,7 +473,8 @@ def updatebudget(urlvar_budgetname):
         income = tendie_account.getIncome(session["user_id"])
 
         # Get the users total budgeted amount
-        budgeted = tendie_budgets.getTotalBudgeted(session["user_id"])
+        budgeted = tendie_budgets.getTotalBudgetedByYear(
+            session["user_id"], budget['year'])
 
         # Generate the full, updatable budget data structure (name, amount for budget w/ all categories and their budgeted amounts)
         budget = tendie_budgets.getUpdatableBudget(budget, session["user_id"])
@@ -637,14 +654,24 @@ def reports():
 
 
 @app.route("/budgetsreport", methods=["GET"])
+@app.route("/budgetsreport/<int:year>", methods=["GET"])
 @login_required
-def budgetsreport():
+def budgetsreport(year=None):
     """View year-to-date spending by category report"""
 
-    # Generate a data structure that combines the users budgets and the expenses that have categories which match budgets
-    budgets = tendie_reports.generateBudgetsReport(session["user_id"])
+    # Make sure the year from route is valid
+    if year:
+        currentYear = datetime.now().year
+        if not 2020 <= year <= currentYear:
+            return apology(f"Please select a valid budget year: 2020 through {currentYear}")
+    else:
+        # Set year to current year if it was not in the route (this will set UX to display current years budgets)
+        year = datetime.now().year
 
-    return render_template("budgetsreport.html", budgets=budgets)
+    # Generate a data structure that combines the users budgets and the expenses that have categories which match budgets
+    budgets = tendie_reports.generateBudgetsReport(session["user_id"], year)
+
+    return render_template("budgetsreport.html", budgets=budgets, year=year)
 
 
 @app.route("/monthlyreport", methods=["GET"])

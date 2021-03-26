@@ -4,8 +4,47 @@
 // Core Budget Functionality
 /////////////////////////////////
 
-// Calculate estimates on page load to set initial amounts in the muted text
-$(document).ready(calculateEstimates());
+// Load budget years and calculate estimates on page load to set initial amounts in the muted text
+$(document).ready(function () {
+    loadBudgetYears();
+    calculateEstimates();
+});
+
+// Generates the allowed years to scope a budget for
+function loadBudgetYears() {
+    // Get the budget year element from the form
+    let years = document.getElementById("year")
+
+    // Get the current year from users machine
+    let currentYear = new Date().getFullYear();
+
+    // Try getting the budgets year if user is updating existing budget (will be null if creating a new budget)
+    let updatableYear = document.getElementById('year').getAttribute('data-year')
+
+    // Generate allowable years to select for budget (2020 thru current year)
+    for (let i = currentYear; i >= 2020; i--) {
+        // Create an option tag
+        let option = document.createElement("option");
+        option.innerHTML = i;
+        option.value = i;
+
+        // Check if an existing budget year exists (this means user is updating an existing budget)
+        if (updatableYear !== null) {
+            // Set the selected year to the existing budgets year
+            if (i.toString() == updatableYear) {
+                option.selected = true;
+            }
+        }
+        // User is creating a new budget
+        else {
+            // Set the selected year to the current year
+            if (i == currentYear) {
+                option.selected = true;
+            }
+        }
+        years.appendChild(option);
+    }
+}
 
 // Sets the budget amount to the remaining income that has not yet been budgeted
 function fillBudgetAmount(amount) {

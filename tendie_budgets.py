@@ -17,11 +17,19 @@ db = scoped_session(sessionmaker(bind=engine))
 # Get the users budgets
 def getBudgets(userID):
     results = db.execute(
-        "SELECT id, name, amount FROM budgets WHERE user_id = :usersID ORDER BY name ASC", {"usersID": userID}).fetchall()
+        "SELECT id, name, year, amount FROM budgets WHERE user_id = :usersID ORDER BY name ASC", {"usersID": userID}).fetchall()
 
-    budgets = convertSQLToDict(results)
+    budgets_query = convertSQLToDict(results)
 
-    if budgets:
+    if budgets_query:
+        # Create a dict with budget year as key and empty list as value which will store all budgets for that year
+        budgets = {budget['year']: [] for budget in budgets_query}
+
+        # Update the dict by inserting budget info as values
+        for budget in budgets_query:
+            budgets[budget['year']].append(
+                {'amount': budget['amount'], 'id': budget['id'], 'name': budget['name']})
+
         return budgets
     else:
         return None
@@ -30,17 +38,22 @@ def getBudgets(userID):
 # Get a users budget by the budget ID
 def getBudgetByID(budgetID, userID):
     results = db.execute(
-        "SELECT name, amount, id FROM budgets WHERE user_id = :usersID AND id = :budgetID", {"usersID": userID, "budgetID": budgetID}).fetchall()
+        "SELECT name, amount, year, id FROM budgets WHERE user_id = :usersID AND id = :budgetID", {"usersID": userID, "budgetID": budgetID}).fetchall()
 
     budget = convertSQLToDict(results)
 
     return budget[0]
 
 
-# Get total amount budgeted
-def getTotalBudgeted(userID):
+# Get total amount budgeted by year
+def getTotalBudgetedByYear(userID, year=None):
+
+    # Default to getting current years budgets
+    if not year:
+        year = datetime.now().year
+
     amount = db.execute(
-        "SELECT SUM(amount) AS amount FROM budgets WHERE user_id = :usersID", {"usersID": userID}).fetchone()[0]
+        "SELECT SUM(amount) AS amount FROM budgets WHERE user_id = :usersID AND year = :year", {"usersID": userID, "year": year}).fetchone()[0]
 
     if amount is None:
         return 0
@@ -50,22 +63,31 @@ def getTotalBudgeted(userID):
 
 # Generates a budget data structure from the users input when submitting a new or updated budget
 def generateBudgetFromForm(formData):
-    budget = {"name": None, "amount": None, "categories": []}
+    budget = {"name": None, "year": None, "amount": None, "categories": []}
     counter = 0
 
     # Loop through all of the form data to extract budgets details and store in the budget dict
     for key, value in formData:
         counter += 1
-        # First 2 keys represent the name/amount from the form, all other keys represent dynamically loaded categories from the form
-        if counter <= 2:
+        # First 3 keys represent the name/year/amount from the form, all other keys represent dynamically loaded categories from the form
+        if counter <= 3:
             # Check name for invalid chars and uniqueness
-            if key != "amount":
+            if key == "name":
                 # Invalid chars are all special chars except underscores, spaces, and hyphens (uses same regex as what's on the HTML page)
                 validBudgetName = re.search("^([a-zA-Z0-9_\s\-]*)$", value)
                 if validBudgetName:
                     budget[key] = value.strip()
                 else:
                     return {"apology": "Please enter a budget name without special characters except underscores, spaces, and hyphens"}
+            # Check if year is valid
+            elif key == "year":
+                budgetYear = int(value)
+                currentYear = datetime.now().year
+
+                if 2020 <= budgetYear <= currentYear:
+                    budget[key] = budgetYear
+                else:
+                    return {"apology": f"Please select a valid budget year: 2020 through {currentYear}"}
             # Convert the amount from string to float
             else:
                 amount = float(value.strip())
@@ -100,7 +122,7 @@ def generateBudgetFromForm(formData):
 
 
 # Create a new budget
-# Note: due to DB design, this is a 2 step process: 1) create a budget (name/amount) in budgets table, 2) create 1:M records in budgetCategories (budgetID + categoryID + percentAmount)
+# Note: due to DB design, this is a 2 step process: 1) create a budget (name/year/amount) in budgets table, 2) create 1:M records in budgetCategories (budgetID + categoryID + percentAmount)
 def createBudget(budget, userID):
     # Verify the budget name is not a duplicate of an existing budget
     uniqueBudgetName = isUniqueBudgetName(budget["name"], None, userID)
@@ -108,8 +130,8 @@ def createBudget(budget, userID):
         return {"apology": "Please enter a unique budget name, not a duplicate."}
 
     # Insert new budget into DB
-    newBudgetID = db.execute("INSERT INTO budgets (name, amount, user_id) VALUES (:budgetName, :budgetAmount, :usersID) RETURNING id",
-                             {"budgetName": budget["name"], "budgetAmount": budget["amount"], "usersID": userID}).fetchone()[0]
+    newBudgetID = db.execute("INSERT INTO budgets (name, year, amount, user_id) VALUES (:budgetName, :budgetYear, :budgetAmount, :usersID) RETURNING id",
+                             {"budgetName": budget["name"], "budgetYear": budget["year"], "budgetAmount": budget["amount"], "usersID": userID}).fetchone()[0]
     db.commit()
 
     # Get category IDs from DB for the new budget
@@ -131,7 +153,7 @@ def addCategory(budgetID, categoryIDS):
 
 
 # Update an existing budget
-# Note: due to DB design, this is a X step process: (write similar as create / above)
+# Note: due to DB design, this is a 3 step process: 1) update a budget (name/year/amount) in budgets table, 2) delete the existing spending categories for the budget, 3) create 1:M records in budgetCategories (budgetID + categoryID + percentAmount)
 def updateBudget(oldBudgetName, budget, userID):
     # Query the DB for the budget ID
     oldBudgetID = getBudgetID(oldBudgetName, userID)
@@ -142,9 +164,9 @@ def updateBudget(oldBudgetName, budget, userID):
     if not uniqueBudgetName:
         return {"apology": "Please enter a unique budget name, not a duplicate."}
 
-    # Update the budget name and amount in DB
-    db.execute("UPDATE budgets SET name = :budgetName, amount = :budgetAmount WHERE id = :oldBudgetID AND user_id = :usersID",
-               {"budgetName": budget["name"], "budgetAmount": budget["amount"], "oldBudgetID": oldBudgetID, "usersID": userID})
+    # Update the budget name, year, and amount in DB
+    db.execute("UPDATE budgets SET name = :budgetName, year = :budgetYear, amount = :budgetAmount WHERE id = :oldBudgetID AND user_id = :usersID",
+               {"budgetName": budget["name"], "budgetYear": budget["year"], "budgetAmount": budget["amount"], "oldBudgetID": oldBudgetID, "usersID": userID})
     db.commit()
 
     # Delete existing category records for the budget

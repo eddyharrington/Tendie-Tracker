@@ -1,55 +1,70 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Create Budget
+Create Budget
 {% endblock %}
 
 {% block main %}
-    <h1>Create a Budget</h1>
-    <br>
+<h1>Create a Budget</h1>
+<br>
 
-    <!--TODO: need to make sure user has categories loaded in otherwise display message they need at least 1 category and give them link to manage those-->
+<!--TODO: need to make sure user has categories loaded in otherwise display message they need at least 1 category and give them link to manage those-->
 
-    {% if (income - budgeted) <= 0 %}
-        <div class="alert alert-success">
-          <h4 class="alert-heading">Congrats!</h4>
-          <p class="mb-0">All of your income is currently budgeted for. Good job 👍</p>
-        </div>
+{% if (income - budgeted) <= 0 %} <div class="alert alert-success">
+    <h4 class="alert-heading">Congrats!</h4>
+    <p class="mb-0">All of your income is currently budgeted for. Good job 👍</p>
+    </div>
     {% else %}
-        <form action="/createbudget" id="createBudgetForm" method="post" autocomplete="off">
-            <div class="form-group">
-                <label for="name" class="formLabels">Budget Name</label>
-                <input type="text" class="form-control" id="name" form='createBudgetForm' name="name" placeholder="e.g. 2020 expenses" pattern="^([a-zA-Z0-9_\s\-]*)$" title="Please enter a name without special characters except underscores, spaces, and hyphens" maxlength="45" required autofocus>
+    <form action="/createbudget" id="createBudgetForm" method="post" autocomplete="off">
+        <div class="form-group">
+            <label for="name" class="formLabels">Budget Name</label>
+            <input type="text" class="form-control" id="name" form='createBudgetForm' name="name"
+                placeholder="e.g. Living expenses" pattern="^([a-zA-Z0-9_\s\-]*)$"
+                title="Please enter a name without special characters except underscores, spaces, and hyphens"
+                maxlength="45" required autofocus>
+        </div>
+        <div class="form-group">
+            <label for="year" class="formLabels">Budget Year</label>
+            <select id="year" class="form-control" name="year" form="createBudgetForm" required></select>
+        </div>
+        <div class="form-group">
+            <label for="amount" class="formLabels">Amount (Annual)</label>
+            {% set remainingBudget = (income - budgeted) %}
+            <input type="number" class="form-control" id="amount" form='createBudgetForm' name="amount" placeholder="$"
+                required min="0.01" step="0.01" max="{{ remainingBudget }}" oninput="calculateEstimates()">
+            <small class="form-text text-muted">Remaining income that is not yet budgeted: <a href=""
+                    title="Set budget amount to remaining available income"
+                    onclick="fillBudgetAmount({{ remainingBudget }}); return false;">{{ remainingBudget | usd
+                    }}</a></small>
+            <small class="form-text text-muted"><strong>Amount breakdown:</strong></small>
+            <small class="form-text text-muted" id="weekly">Weekly amount: {{ 0 | usd }}</small>
+            <small class="form-text text-muted" id="monthly">Monthly amount: {{ 0 | usd }}</small>
+        </div>
+        <div class="form-group">
+            <label class="formLabels budgetsCategoriesLabel">Spending Categories</label>
+            {% for category in categories %}
+            <div class="custom-control custom-switch">
+                <input type="checkbox" class="custom-control-input" id="categories.{{ loop.index }}"
+                    name="categories.{{ loop.index }}" value="{{ category['name'] }}" form='createBudgetForm'
+                    onclick="displayCategoryAmounts(this)">
+                <label class="custom-control-label" for="categories.{{ loop.index }}"
+                    name="categories.{{ loop.index }}">{{ category["name"] }}</label>
+                <br>
+                <input type="hidden" class="form-control-sm categoryPercent" id="categoryPercent.{{ loop.index }}"
+                    name="categoryPercent.{{ loop.index }}" placeholder="%" min="1" step="1" max="100" maxlength="3"
+                    onpaste="return false" oninput="calculateCategories(this)" readonly>
+                <label class="" for="categoryPercent.{{ loop.index }}" hidden>%</label>
+                <small class="form-text text-muted" hidden></small>
             </div>
-            <div class="form-group">
-                <label for="amount" class="formLabels">Amount (Annual)</label>
-                {% set remainingBudget = (income - budgeted) %}
-                <input type="number" class="form-control" id="amount" form='createBudgetForm' name="amount" placeholder="$" required min="0.01" step="0.01" max="{{ remainingBudget }}" oninput="calculateEstimates()">
-                <small class="form-text text-muted">Remaining income that is not yet budgeted: <a href="" title="Set budget amount to remaining available income" onclick="fillBudgetAmount({{ remainingBudget }}); return false;">{{ remainingBudget | usd }}</a></small>
-                <small class="form-text text-muted"><strong>Amount breakdown:</strong></small>
-                <small class="form-text text-muted" id="weekly">Weekly amount: {{ 0 | usd }}</small>
-                <small class="form-text text-muted" id="monthly">Monthly amount: {{ 0 | usd }}</small>
-            </div>
-            <div class="form-group">
-                <label class="formLabels budgetsCategoriesLabel">Spending Categories</label>
-                {% for category in categories %}
-                    <div class="custom-control custom-switch">
-                      <input type="checkbox" class="custom-control-input" id="categories.{{ loop.index }}" name="categories.{{ loop.index }}" value="{{ category['name'] }}" form='createBudgetForm' onclick="displayCategoryAmounts(this)">
-                      <label class="custom-control-label" for="categories.{{ loop.index }}" name="categories.{{ loop.index }}">{{ category["name"] }}</label>
-                      <br>
-                      <input type="hidden" class="form-control-sm categoryPercent" id="categoryPercent.{{ loop.index }}" name="categoryPercent.{{ loop.index }}" placeholder="%" min="1" step="1" max="100" maxlength="3" onpaste="return false" oninput="calculateCategories(this)" readonly>
-                      <label class="" for="categoryPercent.{{ loop.index }}" hidden>%</label>
-                      <small class="form-text text-muted" hidden></small>
-                    </div>
-                    <br>
-                {% endfor %}
-            </div>
-            <button type="submit" id="btnSaveBudget" class="btn btn-success" onclick="validateCategories()">Save</button>
-            <p class="text-danger" id="submitAlert" hidden></p>
-        </form>
+            <br>
+            {% endfor %}
+        </div>
+        <button type="submit" id="btnSaveBudget" class="btn btn-success" onclick="validateCategories()">Save</button>
+        <p class="text-danger" id="submitAlert" hidden></p>
+    </form>
 
-        <script src="/static/js/budgets.js"></script>
+    <script src="/static/js/budgets.js"></script>
 
     {% endif %}
 
-{% endblock %}
+    {% endblock %}

@@ -1,101 +1,139 @@
 {% extends "layout.html" %}
 
 {% block title %}
-    Manage Budgets
+Manage Budgets
 {% endblock %}
 
 {% block main %}
-    <h1>Manage Budgets</h1>
-    <br>
-    {% if deletedBudgetName != None %}
-      <div class="alert alert-dismissible alert-danger">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        <strong>POOF!</strong> You deleted the budget '<strong>{{ deletedBudgetName }}</strong>'.
-      </div>
-    {% endif %}
-    <div class="row">
-      <div class="col-sm-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Create a new budget</h5>
-            {% if (income - budgeted) > 0 %}
-            <p>You currently have <strong>{{ (income - budgeted) | usd}}</strong> of unbudgeted income.</p>
-            <a href="/createbudget" class="btn btn-success">Create a Budget</a>
-            {% else %}
-            <p>All of your income is budgeted for. Good job 👍</p>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-      <div class="col-sm-6">
-        <div class="card">
-          <div class="card-body">
-            <h5 class="card-title">Update existing budgets</h5>
-            {% if budgets %}
-                {% for budget in budgets %}
-                  <div class="btn-group">
-                    <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      {{ budget["name"] }}
-                    </button>
-                    <div class="dropdown-menu">
-                      <a class="dropdown-item" href="/updatebudget/{{ budget['name'] }}">Update</a>
-                      <div class="dropdown-divider"></div>
-                      <a class="dropdown-item" href="#" data-toggle="modal" data-target="#deleteModal" data-budget="{{ budget['name'] }}" data-amount="{{ budget['amount'] | usd }}">Delete</a>
-                    </div>
-                  </div>
-                  <small class="form-text text-muted">Amount: {{ budget["amount"] | usd }}</a></small>
-                  <br>
-                {% endfor %}
-            {% else %}
-                <p>You have not created any budgets yet 😢</p>
-            {% endif %}
-          </div>
-        </div>
+<h1>Manage Budgets</h1>
+<br>
+{% if deletedBudgetName != None %}
+<div class="alert alert-dismissible alert-danger">
+  <button type="button" class="close" data-dismiss="alert">&times;</button>
+  <strong>POOF!</strong> You deleted the budget '<strong>{{ deletedBudgetName }}</strong>'.
+</div>
+{% endif %}
+
+<span style="font-weight:bold;">Year:</span>
+<select name="year" id="year" class="custom-select" style="width:auto;"
+  onchange="window.location = '/budgets/' + this.options[this.selectedIndex].value"></select>
+<br><br>
+
+<div class="row">
+  <div class="col-sm-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Create a new budget</h5>
+        {% if (income - budgeted) > 0 %}
+        <p>You currently have <strong>{{ (income - budgeted) | usd}}</strong> of unbudgeted income.</p>
+        <a href="/createbudget" class="btn btn-success">Create a Budget</a>
+        {% else %}
+        <p>All of your income is budgeted for. Good job 👍</p>
+        {% endif %}
       </div>
     </div>
+  </div>
+  <div class="col-sm-6">
+    <div class="card">
+      <div class="card-body">
+        <h5 class="card-title">Update existing budgets</h5>
 
-    <!-- Budget delete modal -->
-    <div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="deleteModalLabel">Delete Budget</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">&times;</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <form action="/budgets" id="deleteBudget" method="post">
-              <div class="form-group">
-                <input type="hidden" class="form-control" name="delete" id="delete" value="" readonly>
-              </div>
-            </form>
-            <p class="text-danger"><strong>Are you sure you want to delete this budget?</strong></p>
-            <ul class="text-danger" style="text-align:left">
-              <li class="text-danger small">The budget will no longer appear in your Dashboard or Reports</li>
-              <li class="text-danger small" id="amountAlert"></li>
-            </ul>
-          </div>
-          <div class="modal-footer">
-            <button type="submit" class="btn btn-danger" form="deleteBudget" id="btnDeleteBudget">Delete Budget</button>
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        {% if budgets and year in budgets %}
+        {% for budget in budgets[year] %}
+        <div class="btn-group">
+          <button type="button" class="btn btn-info dropdown-toggle" data-toggle="dropdown" aria-haspopup="true"
+            aria-expanded="false">
+            {{ budget["name"] }}
+          </button>
+          <div class="dropdown-menu">
+            <a class="dropdown-item" href="/updatebudget/{{ budget['name'] }}">Update</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item" href="#" data-toggle="modal" data-target="#deleteModal"
+              data-budget="{{ budget['name'] }}" data-year="{{ budget['year'] }}"
+              data-amount="{{ budget['amount'] | usd }}">Delete</a>
           </div>
         </div>
+        <small class="form-text text-muted">Amount: {{ budget["amount"] | usd }}</a></small>
+        <br>
+        {% endfor %}
+        {% else %}
+        <p>You have not created any budgets yet 😢</p>
+        {% endif %}
       </div>
     </div>
+  </div>
+</div>
 
-    <script>
-        // Set the title and fields of the delete modal on load/show
-        $('#deleteModal').on('show.bs.modal', function (event) {
-            var button = $(event.relatedTarget) // Button that triggered the modal
-            var budget = button.data('budget') // Extract info from data-* attributes
-            var amount = button.data('amount')
-            var modal = $(this)
-            modal.find('.modal-title').text("Delete budget '" + budget + "'")
-            modal.find('#delete').val(budget)
-            modal.find('#amountAlert').text(amount + " of your income will no longer be budgeted for")
-        })
-    </script>
+<!-- Budget delete modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Delete Budget</h5>
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form action="/budgets" id="deleteBudget" method="post">
+          <div class="form-group">
+            <input type="hidden" class="form-control" name="delete" id="delete" value="" readonly>
+          </div>
+        </form>
+        <p class="text-danger"><strong>Are you sure you want to delete this budget?</strong></p>
+        <ul class="text-danger" style="text-align:left">
+          <li class="text-danger small">The budget will no longer appear in your Dashboard or Reports</li>
+          <li class="text-danger small" id="amountAlert"></li>
+        </ul>
+      </div>
+      <div class="modal-footer">
+        <button type="submit" class="btn btn-danger" form="deleteBudget" id="btnDeleteBudget">Delete Budget</button>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  $(document).ready(function () {
+    // Get the budget year element from the form
+    let years = document.getElementById("year")
+
+    // Get the current year from users machine
+    let currentYear = new Date().getFullYear();
+    let selectedYear = "{{ year }}"
+
+    // Generate allowable years to select for budget (2020 thru current year)
+    for (let i = parseInt(currentYear); i >= 2020; i--) {
+      // Create an option tag
+      let option = document.createElement("option");
+      option.innerHTML = i;
+      option.value = i;
+      // Set the selected year
+      if (i == parseInt(selectedYear)) {
+        option.selected = true;
+      }
+      years.appendChild(option);
+    }
+
+  });
+</script>
+
+{% if budgets %}
+<script>
+  // Set the title and fields of the delete modal on load/show
+  $('#deleteModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget) // Button that triggered the modal
+    var budget = button.data('budget') // Extract info from data-* attributes
+    var year = button.data('year')
+    var amount = button.data('amount')
+    var modal = $(this)
+    modal.find('.modal-title').text("Delete budget '" + budget + "'")
+    modal.find('#delete').val(budget)
+    modal.find('#amountAlert').text(amount + " of your " + year + " income will no longer be budgeted for")
+  })
+</script>
+{% endif %}
 
 {% endblock %}
-
