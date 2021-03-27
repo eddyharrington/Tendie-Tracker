@@ -42,8 +42,8 @@ Home
                     </div>
                     <div class="form-group">
                         <label for="date" class="col-form-label">Date:</label>
-                        <input type="date" class="form-control" name="date" id="date" value="{{ date }}" form="quickExpense"
-                            required>
+                        <input type="date" class="form-control" name="date" id="date" value="{{ date }}"
+                            form="quickExpense" required>
                     </div>
                     <div class="form-group">
                         <label for="payer" class="col-form-label">Payer:</label>
@@ -88,17 +88,16 @@ Home
                 <div class="card-header"><strong>Remaining Income</strong></div>
                 <div class="card-body">
                     {% set remainingIncome = (income - expenses_year) %}
-                    {% if remainingIncome < 0 %}
-                    <h4 class="card-title">$0</h4>
-                    {% else %}
-                    <h4 class="card-title">{{ remainingIncome | usd }}</h4>
-                    {% endif %}
+                    {% if remainingIncome < 0 %} <h4 class="card-title">$0</h4>
+                        {% else %}
+                        <h4 class="card-title">{{ remainingIncome | usd }}</h4>
+                        {% endif %}
                 </div>
             </div>
         </div>
         <div class="col">
             <div class="card text-white bg-warning mb-3" style="max-width: 20rem;">
-                <div class="card-header"><strong>2020 Expenses</strong></div>
+                <div class="card-header"><strong>{{ date[:4] }} Expenses</strong></div>
                 <div class="card-body">
                     {% if expenses_year != None %}
                     <h4 class="card-title">{{ expenses_year | usd }}</h4>
@@ -191,8 +190,8 @@ Home
         {% for budget in budgets %}
         <div class="col">
             <div class="card bg-light mb-3" style="max-width: 14rem;">
-                <div class="card-header"><strong><a
-                            href="/updatebudget/{{ budget['name'] }}">{{ budget["name"] }}</a></strong></div>
+                <div class="card-header"><strong><a href="/updatebudget/{{ budget['name'] }}">{{ budget["name"]
+                            }}</a></strong></div>
                 <div class="card-body-dash">
                     {% set percent = ((budget["spent"] / budget["amount"]) * 100) %}
                     {% set totalBudgetAmount = (budget["amount"] | usd) %}
@@ -303,10 +302,11 @@ Home
     <div class="row">
         {% if payersChart %}
         <div class="col-12">
-        <div class="chart-container" style="position: relative; height:40vh">
-            <canvas id="payersChart" width="400" height="400"></canvas>
-        </div>
-        <p><small class="text-muted">Chart note: does not include payers that represent less than 1% of overall spending</small></p>
+            <div class="chart-container" style="position: relative; height:40vh">
+                <canvas id="payersChart" width="400" height="400"></canvas>
+            </div>
+            <p><small class="text-muted">Chart note: does not include payers that represent less than 1% of overall
+                    spending</small></p>
         </div>
         {% else %}
         <div class="col">

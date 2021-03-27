@@ -28,7 +28,7 @@ def getTotalSpend_Year(userID):
 # Get and return the users total spend for the current month
 def getTotalSpend_Month(userID):
     results = db.execute(
-        "SELECT SUM(amount) AS expenses_month FROM expenses WHERE user_id = :usersID AND date_part('month', date(expensedate)) = date_part('month', CURRENT_DATE)",
+        "SELECT SUM(amount) AS expenses_month FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', CURRENT_DATE) AND date_part('month', date(expensedate)) = date_part('month', CURRENT_DATE)",
         {"usersID": userID}).fetchall()
 
     totalSpendMonth = convertSQLToDict(results)
@@ -40,7 +40,7 @@ def getTotalSpend_Month(userID):
 def getTotalSpend_Week(userID):
     # Query note: Day 0 of a week == Sunday. This query grabs expenses between the *current* weeks Monday and Sunday.
     results = db.execute(
-        "SELECT SUM(amount) AS expenses_week FROM expenses WHERE user_id = :usersID AND date_part('week', date(expensedate)) = date_part('week', CURRENT_DATE)",
+        "SELECT SUM(amount) AS expenses_week FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', CURRENT_DATE) AND date_part('week', date(expensedate)) = date_part('week', CURRENT_DATE)",
         {"usersID": userID}).fetchall()
 
     totalSpendWeek = convertSQLToDict(results)
@@ -51,7 +51,7 @@ def getTotalSpend_Week(userID):
 # Get and return the users last 5 expenses
 def getLastFiveExpenses(userID):
     results = db.execute(
-        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY submitTime DESC LIMIT 5", {"usersID": userID}).fetchall()
+        "SELECT description, category, expenseDate, payer, amount FROM expenses WHERE user_id = :usersID ORDER BY id DESC LIMIT 5", {"usersID": userID}).fetchall()
 
     lastFiveExpenses = convertSQLToDict(results)
 
@@ -125,7 +125,7 @@ def getWeeklySpending(weekNames, userID):
         week["endOfWeek"] = str(name["endofweek"])
         week["startOfWeek"] = str(name["startofweek"])
         results = db.execute(
-            "SELECT SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('week', date(expensedate)) = date_part('week',date(:weekName))",
+            "SELECT SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', date(:weekName)) AND date_part('week', date(expensedate)) = date_part('week',date(:weekName))",
             {"usersID": userID, "weekName": week["endOfWeek"]}).fetchall()
         weekSpending = convertSQLToDict(results)
 
