@@ -174,7 +174,7 @@ function loadMonthlySpendingTable(monthlySpendingTable) {
     else {
         $('#monthlyExpenses').DataTable({
             "pagingType": "full_numbers",
-            "order": [[0, "asc"]],
+            "order": [[0, "desc"]],
             "scrollY": "300px",
             "scrollCollapse": true,
             "paging": false,

@@ -63,7 +63,7 @@ def addExpenses(formData, userID):
 
 # Get and return the users lifetime expense history
 def getHistory(userID):
-    results = db.execute("SELECT description, category, expenseDate AS date, payer, amount, submitTime FROM expenses WHERE user_id = :usersID ORDER BY submitTime ASC",
+    results = db.execute("SELECT description, category, expenseDate AS date, payer, amount, submitTime FROM expenses WHERE user_id = :usersID ORDER BY id ASC",
                          {"usersID": userID}).fetchall()
 
     history = convertSQLToDict(results)

@@ -55,7 +55,7 @@ def generateMonthlyReport(userID, year=None):
 
     # Get the spending data from DB for the table (individual expenses per month)
     results = db.execute(
-        "SELECT description, category, expensedate, amount, payer FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year ORDER BY id DESC", {"usersID": userID, "year": year}).fetchall()
+        "SELECT description, category, expensedate, amount, payer FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = :year ORDER BY id ASC", {"usersID": userID, "year": year}).fetchall()
     spending_month_table = convertSQLToDict(results)
 
     # Combine both data points (chart and table) into a single data structure
