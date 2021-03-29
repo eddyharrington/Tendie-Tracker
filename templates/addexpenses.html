@@ -14,6 +14,7 @@
     <p><small>Tip: Delete a row by clicking/tapping the row number in the '#' column and then clicking/tapping the 'Delete Row' button. Must have at least 2 rows.</small></p>
 
     <form action="/addexpenses" method="post" id="expenseForm" autocomplete="off">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
         <div class="table-responsive-sm">
         <table id="expenseTable" class="table table-hover">
           <thead>

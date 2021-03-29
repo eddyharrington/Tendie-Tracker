@@ -43,6 +43,7 @@
           </div>
           <div class="collapse" id="collapseIncome">
               <form action="/account" id="updateIncome" method="post" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="form-group">
                     <label class="col-form-label col-form-label-sm" for="income">Income Amount</label>
                     <input class="form-control form-control-sm" type="text" name="income" id="income" form='updateIncome' size="10" placeholder="$" maxlength="10" pattern="(?=.*?\d)^(([1-9]\d{0,2}(\d{3})*)|\d+)?(\.\d{1,2})?$" title="Format must be currency value without dollar sign or commas e.g. 1, 2.50, 1500.75" required>
@@ -64,6 +65,7 @@
           </div>
           <div class="collapse" id="collapsePayer">
               <form action="/account" id="addPayer" method="post" autocomplete="off">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="form-group">
                     <label class="col-form-label col-form-label-sm" for="payerName">First Name</label>
                     <!--Regex from kennytm on SO: https://stackoverflow.com/questions/2721768/regular-expression-to-match-a-name -->
@@ -101,6 +103,7 @@
           </div>
           <div class="collapse" id="collapsePassword">
               <form action="/account" id="updatePassword" method="post">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                 <div class="form-group">
                     <input class="form-control validate-register" name="currentPassword" id="currentPassword" type="password" placeholder="Current password" required
                         pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Length must be at least 8 characters and contain minimum of one number, one lowercase letter, and one uppercase letter" onkeyup="checkMatch()">
@@ -144,6 +147,7 @@
           </div>
           <div class="modal-body">
             <form action="/account" id="renamePayer" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               <div class="form-group">
                 <label for="oldpayer" class="col-form-label">Old Payer:</label>
                 <input type="text" class="form-control" name="oldpayer" id="oldpayer" value="" form="renamePayer" readonly>
@@ -179,6 +183,7 @@
           </div>
           <div class="modal-body">
             <form action="/account" id="deletePayer" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
               <div class="form-group">
                 <input type="hidden" class="form-control" name="delete" id="delete" value="" readonly>
               </div>

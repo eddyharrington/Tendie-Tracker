@@ -27,6 +27,7 @@ Home
             </div>
             <div class="modal-body">
                 <form action="/" id="quickExpense" method="post" autocomplete="off">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                     <div class="form-group">
                         <label for="description" class="col-form-label">Description:</label>
                         <input type="text" class="form-control" name="description" id="description" value=""

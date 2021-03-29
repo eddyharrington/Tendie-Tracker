@@ -19,6 +19,7 @@ Register
 </div>
 {% endif %}
 <form action="/register" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <div class="form-group">
         <input autocomplete="off" autofocus class="form-control validate-register" name="username" id="username"
             type="text" placeholder="Username" required pattern="^[a-zA-Z0-9]{3,16}$"

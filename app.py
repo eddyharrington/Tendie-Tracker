@@ -18,6 +18,7 @@ from tempfile import mkdtemp
 from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
 from werkzeug.security import check_password_hash, generate_password_hash
 from datetime import datetime
+from flask_wtf.csrf import CSRFProtect
 
 from helpers import apology, login_required, usd
 
@@ -47,6 +48,8 @@ Session(app)
 
 # Custom filter
 app.jinja_env.filters["usd"] = usd
+# Enable CSRF protection globally for the Flask app
+csrf = CSRFProtect(app)
 
 # Create engine object to manage connections to DB, and scoped session to separate user interactions with DB
 engine = create_engine(os.getenv("DATABASE_URL"))
@@ -222,6 +225,9 @@ def index():
         # Get all of the expenses provided from the HTML form
         formData = list(request.form.items())
 
+        # Remove CSRF field from form data before processing
+        formData.pop(0)
+
         # Add expenses to the DB for user
         expenses = tendie_expenses.addExpenses(formData, session["user_id"])
 
@@ -246,6 +252,9 @@ def addexpenses():
     if request.method == "POST":
         # Get all of the expenses provided from the HTML form
         formData = list(request.form.items())
+
+        # Remove CSRF field from form data before processing
+        formData.pop(0)
 
         # Add expenses to the DB for user
         expenses = tendie_expenses.addExpenses(formData, session["user_id"])
@@ -404,6 +413,9 @@ def createbudget():
         # Get all of the budget info provided from the HTML form
         formData = list(request.form.items())
 
+        # Remove CSRF field from form data before processing
+        formData.pop(0)
+
         # Generate data structure to hold budget info from form
         budgetDict = tendie_budgets.generateBudgetFromForm(formData)
 
@@ -441,6 +453,9 @@ def updatebudget(urlvar_budgetname):
     if request.method == "POST":
         # Get all of the budget info provided from the HTML form
         formData = list(request.form.items())
+
+        # Remove CSRF field from form data before processing
+        formData.pop(0)
 
         # Generate data structure to hold budget info from form
         budgetDict = tendie_budgets.generateBudgetFromForm(formData)

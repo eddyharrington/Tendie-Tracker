@@ -12,6 +12,7 @@ Log In
 <br>
 <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
 <form action="/login" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
     <div class="form-group">
         <input autocomplete="off" autofocus class="form-control" name="username" placeholder="Username" type="text">
     </div>

@@ -77,6 +77,7 @@ Manage Budgets
       </div>
       <div class="modal-body">
         <form action="/budgets" id="deleteBudget" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
           <div class="form-group">
             <input type="hidden" class="form-control" name="delete" id="delete" value="" readonly>
           </div>
