@@ -86,7 +86,7 @@ function loadWeeklySpendingCharts(weeklySpending) {
         let spendingChart = new Chart(chartElement, {
             type: 'line',
             data: {
-                labels: [weeklySpending[0].startOfWeek.slice(5) + " - " + weeklySpending[0].endOfWeek.slice(5), weeklySpending[1].startOfWeek.slice(5) + " - " + weeklySpending[1].endOfWeek.slice(5), weeklySpending[2].startOfWeek.slice(5) + " - " + weeklySpending[2].endOfWeek.slice(5), weeklySpending[3].startOfWeek.slice(5) + " - " + weeklySpending[3].endOfWeek.slice(5)],
+                labels: [weeklySpending[0].startOfWeek.slice(0, 6) + " - " + weeklySpending[0].endOfWeek.slice(0, 6), weeklySpending[1].startOfWeek.slice(0, 6) + " - " + weeklySpending[1].endOfWeek.slice(0, 6), weeklySpending[2].startOfWeek.slice(0, 6) + " - " + weeklySpending[2].endOfWeek.slice(0, 6), weeklySpending[3].startOfWeek.slice(0, 6) + " - " + weeklySpending[3].endOfWeek.slice(0, 6)],
                 datasets: [{
                     label: 'Total $ Spent',
                     data: [(Math.round(weeklySpending[0].amount * 100) / 100), (Math.round(weeklySpending[1].amount * 100) / 100), (Math.round(weeklySpending[2].amount * 100) / 100), (Math.round(weeklySpending[3].amount * 100) / 100)],

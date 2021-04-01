@@ -122,11 +122,11 @@ def getWeeklySpending(weekNames, userID):
 
     # Loop through each week and store the name/amount in a dict
     for name in weekNames:
-        week["endOfWeek"] = str(name["endofweek"])
-        week["startOfWeek"] = str(name["startofweek"])
+        week["endOfWeek"] = name['endofweek'].strftime('%b %d')
+        week["startOfWeek"] = name['startofweek'].strftime('%b %d')
         results = db.execute(
             "SELECT SUM(amount) AS amount FROM expenses WHERE user_id = :usersID AND date_part('year', date(expensedate)) = date_part('year', date(:weekName)) AND date_part('week', date(expensedate)) = date_part('week',date(:weekName))",
-            {"usersID": userID, "weekName": week["endOfWeek"]}).fetchall()
+            {"usersID": userID, "weekName": str(name["endofweek"])}).fetchall()
         weekSpending = convertSQLToDict(results)
 
         # Set the amount to 0 if there are no expenses for a given week
