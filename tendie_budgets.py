@@ -282,7 +282,7 @@ def getUpdatableBudget(budget, userID):
             # Mark the category as checked/True if it exists in the budget that the user wants to update
             if category["name"] == budgetCategory["name"]:
                 # Convert the percentage (decimal) into a whole integer to be consistent with UX
-                amount = int(budgetCategory["amount"] * 100)
+                amount = round(budgetCategory["amount"] * 100)
                 budget["categories"].append(
                     {"name": category["name"], "amount": amount, "checked": True})
                 break

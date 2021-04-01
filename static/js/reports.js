@@ -44,7 +44,7 @@ function loadBudgetCharts(budgets) {
                     labels: ['Spent', 'Remaining'],
                     datasets: [{
                         label: budgets[i].name,
-                        data: [budgets[i].spent, budgets[i].remaining],
+                        data: [(Math.round(budgets[i].spent * 100) / 100), (Math.round(budgets[i].remaining * 100) / 100)],
                         backgroundColor: [
                             'rgba(240, 173, 78, 1)',
                             'rgba(2, 184, 117, 1)'
@@ -102,7 +102,7 @@ function loadMonthlySpendingChart(monthlySpendingChart) {
         let amounts = []
         for (i = 0; i < monthlySpendingChart.length; i++) {
             months[i] = monthlySpendingChart[i].name;
-            amounts[i] = monthlySpendingChart[i].amount;
+            amounts[i] = (Math.round(monthlySpendingChart[i].amount * 100) / 100);
         }
 
         // Draw the chart
@@ -202,7 +202,7 @@ function loadSpendingTrendsChart(spendingTrends_chart) {
                 borderColor: "rgba(2, 184, 117, 1)",
                 borderWidth: 2,
                 data: [{
-                    x: spendingTrends_chart[i].totalSpent,
+                    x: (Math.round(spendingTrends_chart[i].totalSpent * 100) / 100),
                     y: spendingTrends_chart[i].totalCount,
                     r: spendingTrends_chart[i].proportionalAmount
                 }]
@@ -288,7 +288,7 @@ function loadPayersSpendingChart(payersSpending) {
                 continue;
             }
             else {
-                payerAmounts.push(payersSpending[i].amount)
+                payerAmounts.push((Math.round(payersSpending[i].amount * 100) / 100))
             }
         }
 

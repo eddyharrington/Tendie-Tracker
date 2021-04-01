@@ -34,7 +34,7 @@ Budget Created
               {% set amount = (results["amount"] * category["percent"]) %}
               <tr>
                 <td>{{ category["name"] }}</td>
-                <td>{{ ((category["percent"] * 100) | string)[:-2] }}%</td>
+                <td>{{ (category['percent'] * 100) | round | int }}%</td>
                 <td>{{ amount | usd }}
               </tr>
               {% endfor %}
