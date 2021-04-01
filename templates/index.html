@@ -196,7 +196,6 @@ Home
                 <div class="card-body-dash">
                     {% set percent = ((budget["spent"] / budget["amount"]) * 100) %}
                     {% set totalBudgetAmount = (budget["amount"] | usd) %}
-                    {% set totalBudgetAmount = totalBudgetAmount[:-3] %}
                     <p>You've spent {{ percent | round | int }}% of your {{ totalBudgetAmount }} budget</p>
                     <div class="chart-container" style="position: relative; height:17vh">
                         <canvas id="budgetChart.{{ loop.index - 1 }}"></canvas>

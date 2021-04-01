@@ -51,7 +51,7 @@ function loadBudgetCharts(budgets) {
                     labels: ['Spent', 'Remaining'],
                     datasets: [{
                         label: budgets[i].name,
-                        data: [budgets[i].spent, budgets[i].remaining],
+                        data: [(Math.round(budgets[i].spent * 100) / 100), (Math.round(budgets[i].remaining * 100) / 100)],
                         backgroundColor: [
                             'rgba(240, 173, 78, 1)',
                             'rgba(2, 184, 117, 1)'
@@ -89,7 +89,7 @@ function loadWeeklySpendingCharts(weeklySpending) {
                 labels: [weeklySpending[0].startOfWeek.slice(5) + " - " + weeklySpending[0].endOfWeek.slice(5), weeklySpending[1].startOfWeek.slice(5) + " - " + weeklySpending[1].endOfWeek.slice(5), weeklySpending[2].startOfWeek.slice(5) + " - " + weeklySpending[2].endOfWeek.slice(5), weeklySpending[3].startOfWeek.slice(5) + " - " + weeklySpending[3].endOfWeek.slice(5)],
                 datasets: [{
                     label: 'Total $ Spent',
-                    data: [weeklySpending[0].amount, weeklySpending[1].amount, weeklySpending[2].amount, weeklySpending[3].amount],
+                    data: [(Math.round(weeklySpending[0].amount * 100) / 100), (Math.round(weeklySpending[1].amount * 100) / 100), (Math.round(weeklySpending[2].amount * 100) / 100), (Math.round(weeklySpending[3].amount * 100) / 100)],
                     pointRadius: 9,
                     fill: false,
                     lineTension: 0.1,
@@ -128,7 +128,7 @@ function loadMonthlySpendingChart(monthlySpending) {
         let amounts = []
         for (i = 0; i < monthlySpending.length; i++) {
             months[i] = monthlySpending[i].name;
-            amounts[i] = monthlySpending[i].amount;
+            amounts[i] = (Math.round(monthlySpending[i].amount * 100) / 100);
         }
 
         // Draw the chart
@@ -209,7 +209,7 @@ function loadSpendingTrendsChart(spendingTrends) {
                 borderColor: "rgba(2, 184, 117, 1)",
                 borderWidth: 2,
                 data: [{
-                    x: spendingTrends[i].totalSpent,
+                    x: (Math.round(spendingTrends[i].totalSpent * 100) / 100),
                     y: spendingTrends[i].totalCount,
                     r: spendingTrends[i].proportionalAmount
                 }]
@@ -278,7 +278,7 @@ function loadPayersSpendingChart(payersSpending) {
                 continue;
             }
             else {
-                payerAmounts.push(payersSpending[i].amount)
+                payerAmounts.push((Math.round(payersSpending[i].amount * 100) / 100))
             }
         }
 
