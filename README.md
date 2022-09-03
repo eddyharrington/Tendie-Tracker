@@ -1,5 +1,7 @@
 # Tendie-Tracker
-A web app for tracking expenses and budgets.
+A (deprecated) web app for tracking expenses and budgets.
+
+⛔ This project is currently DEPRECATED and no longer maintained.
 
 What are tendies?
 Basically, money. Internet people call money 'tendies' and it's a word play on 'tender' (i.e. legal currency) and chicken tenders the food ¯\\\_(ツ)_/¯
